@@ -56,15 +56,16 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 		panic(err)
 	}
 
-	wt := &application.WordTracker{}
+	//cache := &application.Cache{}
+	cache := application.New()
 
 	ctx := context.Background()
-	r, tm, err := c.NewRaft(ctx, id, c.address.String(), wt)
+	r, tm, err := c.NewRaft(ctx, id, c.address.String(), cache)
 	if err != nil {
 		log.Fatalf("failed to start raft: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterExampleServer(s, application.NewRPCInterface(wt, r))
+	pb.RegisterExampleServer(s, application.NewRPCInterface(cache, r))
 	tm.Register(s)
 	leaderhealth.Setup(r, s, []string{"Example"})
 	raftadmin.Register(s, r)
@@ -132,95 +133,6 @@ func (cmd *Cluster) NewRaft(ctx context.Context, myID, myAddress string, fsm raf
 	return r, tm, nil
 }
 
-/*
-// New creates a new Cluster, applying all the provided functional options.
-func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
-	c := &Cluster{
-		id:     id,
-		peers:  []Peer{},
-		logger: &logging.NoOpLogger{},
-	}
-	for _, option := range options {
-		option(c)
-	}
-
-	err := os.MkdirAll(c.directory, 0700)
-	if err != nil {
-		return nil, fmt.Errorf("error creating raft base directory '%s': %w", c.directory, err)
-	}
-
-	// create the snapshot store; this allows the Raft to truncate the log
-	snapshots, err := raft.NewFileSnapshotStore(c.directory, retainSnapshotCount, os.Stderr)
-	if err != nil {
-		return nil, fmt.Errorf("error creating file snapshot store: %w", err)
-	}
-
-	// create the BoltDB instance for both log store and stable store
-	boltDB, err := raftboltdb.NewBoltStore(filepath.Join(c.directory, "raft.db"))
-	if err != nil {
-		return nil, fmt.Errorf("error creating new Bolt store: %w", err)
-	}
-
-	// setup Raft configuration
-	configuration := raft.DefaultConfig()
-	configuration.LocalID = raft.ServerID(c.id)
-
-	// // setup Raft communication
-	// addr, err := net.ResolveTCPAddr("tcp", c.address)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error resolving bind address '%s': %w", c.address, err)
-	// }
-	// addr.String()
-	// transport, err := raft.NewTCPTransport(c.address, addr, 3, 10*time.Second, os.Stderr)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error creating TCP transport: %w", err)
-	// }
-
-	///////////////////////
-
-	tm := grpctx.New(raft.ServerAddress(c.address), []grpc.DialOption{grpc.WithInsecure()})
-	s := grpc.NewServer()
-	tm.Register(s)
-	//r, err := raft.NewRaft(..., tm.Transport())
-
-	//////////////////////
-
-	// instantiate the Raft system
-	//c.raft, err = raft.NewRaft(configuration, fsm, boltDB, boltDB, snapshots, transport)
-	c.raft, err = raft.NewRaft(configuration, fsm, boltDB, boltDB, snapshots, tm.Transport())
-	if err != nil {
-		return nil, fmt.Errorf("error creating new raft cluster: %w", err)
-	}
-
-	c.logger.Debug("raft cluster created")
-
-	if c.bootstrap {
-		servers := []raft.Server{
-			{
-				ID: raft.ServerID(c.id),
-				//Address: transport.LocalAddr(),
-				Address: tm.Transport().LocalAddr(),
-			},
-		}
-		if len(c.peers) > 0 {
-			for _, peer := range c.peers {
-				servers = append(servers, raft.Server{
-					ID:      raft.ServerID(peer.ID),
-					Address: raft.ServerAddress(peer.Address.String()),
-				})
-			}
-		}
-		cluster := raft.Configuration{
-			Servers: servers,
-		}
-		if err := c.raft.BootstrapCluster(cluster).Error(); err != nil {
-			// maybe already bootstrapped??
-			c.logger.Warn("cluster already bootstrapped?: %v", err)
-		}
-	}
-	return c, err
-}
-*/
 const (
 	LeadershipPollInterval = time.Duration(500 * time.Millisecond)
 )

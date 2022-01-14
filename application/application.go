@@ -9,14 +9,20 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-// wordTracker keeps track of the three longest words it ever saw.
-type WordTracker struct {
+func New() *Cache {
+	return &Cache{
+		cache: map[string]string{},
+	}
+}
+
+// Cache keeps track of the three longest words it ever saw.
+type Cache struct {
 	mtx   sync.RWMutex
 	words [3]string
 	cache map[string]string
 }
 
-var _ raft.FSM = &WordTracker{}
+var _ raft.FSM = &Cache{}
 
 // compareWords returns true if a is longer (lexicography breaking ties).
 func compareWords(a, b string) bool {
@@ -32,7 +38,7 @@ func cloneWords(words [3]string) []string {
 	return ret[:]
 }
 
-func (f *WordTracker) Apply(l *raft.Log) interface{} {
+func (f *Cache) Apply(l *raft.Log) interface{} {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 	w := string(l.Data)
@@ -46,12 +52,12 @@ func (f *WordTracker) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (f *WordTracker) Snapshot() (raft.FSMSnapshot, error) {
+func (f *Cache) Snapshot() (raft.FSMSnapshot, error) {
 	// Make sure that any future calls to f.Apply() don't change the snapshot.
 	return &Snapshot{cloneWords(f.words)}, nil
 }
 
-func (f *WordTracker) Restore(r io.ReadCloser) error {
+func (f *Cache) Restore(r io.ReadCloser) error {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err

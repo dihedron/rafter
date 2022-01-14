@@ -11,11 +11,11 @@ import (
 
 type RPCInterface struct {
 	pb.UnimplementedExampleServer
-	wordTracker *WordTracker
+	wordTracker *Cache
 	raft        *raft.Raft
 }
 
-func NewRPCInterface(wt *WordTracker, r *raft.Raft) *RPCInterface {
+func NewRPCInterface(wt *Cache, r *raft.Raft) *RPCInterface {
 	return &RPCInterface{
 		wordTracker: wt,
 		raft:        r,
