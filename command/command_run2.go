@@ -108,21 +108,6 @@ func (cmd *Run2) NewRaft(ctx context.Context, myID, myAddress string, fsm raft.F
 		return nil, nil, fmt.Errorf("error creating new Bolt store: %w", err)
 	}
 
-	// ldb, err := boltdb.NewBoltStore(filepath.Join(cmd.Directory, "logs.dat"))
-	// if err != nil {
-	// 	return nil, nil, fmt.Errorf(`boltdb.NewBoltStore(%q): %v`, filepath.Join(cmd.Directory, "logs.dat"), err)
-	// }
-
-	// sdb, err := boltdb.NewBoltStore(filepath.Join(cmd.Directory, "stable.dat"))
-	// if err != nil {
-	// 	return nil, nil, fmt.Errorf(`boltdb.NewBoltStore(%q): %v`, filepath.Join(cmd.Directory, "stable.dat"), err)
-	// }
-
-	// fss, err := raft.NewFileSnapshotStore(cmd.Directory, 3, os.Stderr)
-	// if err != nil {
-	// 	return nil, nil, fmt.Errorf(`raft.NewFileSnapshotStore(%q, ...): %v`, cmd.Directory, err)
-	// }
-
 	tm := transport.New(raft.ServerAddress(myAddress), []grpc.DialOption{grpc.WithInsecure()})
 
 	r, err := raft.NewRaft(c, fsm, boltDB, boltDB, snapshots, tm.Transport())
@@ -145,8 +130,8 @@ func (cmd *Run2) NewRaft(ctx context.Context, myID, myAddress string, fsm raft.F
 				ID:       raft.ServerID(myID),
 				Suffrage: raft.Voter,
 				//Address: transport.LocalAddr(),
-				// Address: tm.Transport().LocalAddr(),
-				Address: raft.ServerAddress(myAddress),
+				Address: tm.Transport().LocalAddr(),
+				// Address: raft.ServerAddress(myAddress),
 			},
 		}
 		if len(cmd.Peers) > 0 {
