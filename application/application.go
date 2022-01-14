@@ -1,16 +1,11 @@
 package application
 
 import (
-	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
-	pb "github.com/dihedron/rafter/proto"
 	"github.com/hashicorp/raft"
 )
 
@@ -18,6 +13,7 @@ import (
 type WordTracker struct {
 	mtx   sync.RWMutex
 	words [3]string
+	cache map[string]string
 }
 
 var _ raft.FSM = &WordTracker{}
@@ -63,52 +59,4 @@ func (f *WordTracker) Restore(r io.ReadCloser) error {
 	words := strings.Split(string(b), "\n")
 	copy(f.words[:], words)
 	return nil
-}
-
-type Snapshot struct {
-	words []string
-}
-
-func (s *Snapshot) Persist(sink raft.SnapshotSink) error {
-	_, err := sink.Write([]byte(strings.Join(s.words, "\n")))
-	if err != nil {
-		sink.Cancel()
-		return fmt.Errorf("sink.Write(): %v", err)
-	}
-	return sink.Close()
-}
-
-func (s *Snapshot) Release() {
-}
-
-type RPCInterface struct {
-	pb.UnimplementedExampleServer
-	wordTracker *WordTracker
-	raft        *raft.Raft
-}
-
-func NewRPCInterface(wt *WordTracker, r *raft.Raft) *RPCInterface {
-	return &RPCInterface{
-		wordTracker: wt,
-		raft:        r,
-	}
-}
-
-func (r RPCInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.AddWordResponse, error) {
-	f := r.raft.Apply([]byte(req.GetWord()), time.Second)
-	if err := f.Error(); err != nil {
-		return nil, rafterrors.MarkRetriable(err)
-	}
-	return &pb.AddWordResponse{
-		CommitIndex: f.Index(),
-	}, nil
-}
-
-func (r RPCInterface) GetWords(ctx context.Context, req *pb.GetWordsRequest) (*pb.GetWordsResponse, error) {
-	r.wordTracker.mtx.RLock()
-	defer r.wordTracker.mtx.RUnlock()
-	return &pb.GetWordsResponse{
-		BestWords:   cloneWords(r.wordTracker.words),
-		ReadAtIndex: r.raft.AppliedIndex(),
-	}, nil
 }
