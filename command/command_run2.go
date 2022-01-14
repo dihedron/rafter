@@ -1,0 +1,171 @@
+package command
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net"
+	"os"
+	"path/filepath"
+
+	"github.com/Jille/raft-grpc-leader-rpc/leaderhealth"
+	transport "github.com/Jille/raft-grpc-transport"
+	"github.com/Jille/raftadmin"
+	"github.com/dihedron/rafter/application"
+	"github.com/dihedron/rafter/cluster"
+	"github.com/dihedron/rafter/logging"
+	pb "github.com/dihedron/rafter/proto"
+	"github.com/hashicorp/raft"
+	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+type Run2 struct {
+	Bootstrap bool `short:"b" long:"bootstrap" description:"Whether to boostrap the cluster." optional:"yes"`
+	// Address is the intra-cluster bind address for Raft communications.
+	Address cluster.Address `short:"a" long:"address" description:"The network address for Raft and exposed services." optional:"yes" default:"localhost:7001"`
+	// Join specified whether the node should join a cluster.
+	Peers []cluster.Peer `short:"p" long:"peer" description:"The address of a peer node in the cluster to join" optional:"yes"`
+	// State is the directory for Raft cluster state storage.
+	Directory string `short:"d" long:"directory" description:"The base directory where Raft cluster state and snapshots are stored." optional:"yes" default:"./state"`
+}
+
+func (cmd *Run2) Execute(args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("no node id specified: (%v)", args)
+	}
+	fmt.Printf("starting a node at '%s' (base directory '%s'), with peers %+v\n", cmd.Address, cmd.Directory, cmd.Peers)
+
+	logger := logging.NewConsoleLogger(os.Stdout)
+
+	ctx := context.Background()
+	// _, port, err := net.SplitHostPort(*myAddr)
+	// if err != nil {
+	// 	log.Fatalf("failed to parse local address (%q): %v", *myAddr, err)
+	// }
+	sock, err := net.Listen("tcp", fmt.Sprintf(":%d", cmd.Address.Port))
+	if err != nil {
+		logger.Error("failed to listen: %v", err)
+		panic(err)
+	}
+
+	wt := &application.WordTracker{}
+
+	r, tm, err := cmd.NewRaft(ctx, args[0], cmd.Address.String(), wt)
+	if err != nil {
+		log.Fatalf("failed to start raft: %v", err)
+	}
+	s := grpc.NewServer()
+	pb.RegisterExampleServer(s, application.NewRPCInterface(wt, r))
+	tm.Register(s)
+	leaderhealth.Setup(r, s, []string{"Example"})
+	raftadmin.Register(s, r)
+	reflection.Register(s)
+	if err := s.Serve(sock); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
+	/*
+		fsm := cache.New()
+
+		c, err := cluster.New(
+			args[0],
+			fsm,
+			cluster.WithDirectory(cmd.Directory),
+			cluster.WithNetAddress(cmd.Address.String()),
+			cluster.WithPeers(cmd.Peers...),
+			cluster.WithLogger(logger),
+			cluster.WithBootstrap(cmd.Bootstrap),
+		)
+		if err != nil {
+			return fmt.Errorf("error creating new cluster: %w", err)
+		}
+		c.Test()
+	*/
+
+	return nil
+}
+
+func (cmd *Run2) NewRaft(ctx context.Context, myID, myAddress string, fsm raft.FSM) (*raft.Raft, *transport.Manager, error) {
+	c := raft.DefaultConfig()
+	c.LocalID = raft.ServerID(myID)
+
+	err := os.MkdirAll(cmd.Directory, 0700)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating raft base directory '%s': %w", cmd.Directory, err)
+	}
+
+	// create the snapshot store; this allows the Raft to truncate the log
+	snapshots, err := raft.NewFileSnapshotStore(cmd.Directory, 10, os.Stderr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating file snapshot store: %w", err)
+	}
+
+	// create the BoltDB instance for both log store and stable store
+	boltDB, err := raftboltdb.NewBoltStore(filepath.Join(cmd.Directory, "raft.db"))
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating new Bolt store: %w", err)
+	}
+
+	// ldb, err := boltdb.NewBoltStore(filepath.Join(cmd.Directory, "logs.dat"))
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf(`boltdb.NewBoltStore(%q): %v`, filepath.Join(cmd.Directory, "logs.dat"), err)
+	// }
+
+	// sdb, err := boltdb.NewBoltStore(filepath.Join(cmd.Directory, "stable.dat"))
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf(`boltdb.NewBoltStore(%q): %v`, filepath.Join(cmd.Directory, "stable.dat"), err)
+	// }
+
+	// fss, err := raft.NewFileSnapshotStore(cmd.Directory, 3, os.Stderr)
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf(`raft.NewFileSnapshotStore(%q, ...): %v`, cmd.Directory, err)
+	// }
+
+	tm := transport.New(raft.ServerAddress(myAddress), []grpc.DialOption{grpc.WithInsecure()})
+
+	r, err := raft.NewRaft(c, fsm, boltDB, boltDB, snapshots, tm.Transport())
+	if err != nil {
+		return nil, nil, fmt.Errorf("raft.NewRaft: %v", err)
+	}
+
+	if cmd.Bootstrap {
+		// cfg := raft.Configuration{
+		// 	Servers: []raft.Server{
+		// 		{
+		// 			Suffrage: raft.Voter,
+		// 			ID:       raft.ServerID(myID),
+		// 			Address:  raft.ServerAddress(myAddress),
+		// 		},
+		// 	},
+		// }
+		servers := []raft.Server{
+			{
+				ID:       raft.ServerID(myID),
+				Suffrage: raft.Voter,
+				//Address: transport.LocalAddr(),
+				// Address: tm.Transport().LocalAddr(),
+				Address: raft.ServerAddress(myAddress),
+			},
+		}
+		if len(cmd.Peers) > 0 {
+			for _, peer := range cmd.Peers {
+				servers = append(servers, raft.Server{
+					ID:      raft.ServerID(peer.ID),
+					Address: raft.ServerAddress(peer.Address.String()),
+				})
+			}
+		}
+		cluster := raft.Configuration{
+			Servers: servers,
+		}
+
+		f := r.BootstrapCluster(cluster)
+		if err := f.Error(); err != nil {
+			return nil, nil, fmt.Errorf("raft.Raft.BootstrapCluster: %v", err)
+		}
+	}
+
+	return r, tm, nil
+}

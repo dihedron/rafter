@@ -1,0 +1,7 @@
+{
+    "id":"node1",
+    "address" :{
+        "host": "localhost",
+        "port": 7001
+    }
+}

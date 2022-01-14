@@ -1,0 +1,12 @@
+# Use goreman to run `go get github.com/mattn/goreman`
+setup: mkdir -p store/
+
+# start by pootstrapping (at least) one node
+#node1: ../../rafter run --bootstrap --address=localhost:7001 --directory=store/node1 --peer=@node2.json --peer=@node3.json node1 
+#node2: ../../rafter run --address=localhost:7002 --directory=store/node2 --peer=@node1.json --peer=@node3.json node2
+#node3: ../../rafter run --address=localhost:7003 --directory=store/node3 --peer=@node1.json --peer=@node2.json node3
+
+# once the cluster has been bootstrapped, no need to do it again
+node1: ../../rafter run --address=localhost:7001 --directory=store/node1 --peer=@node2.json --peer=@node3.json node1 
+node2: ../../rafter run --address=localhost:7002 --directory=store/node2 --peer=@node1.json --peer=@node3.json node2
+node3: ../../rafter run --address=localhost:7003 --directory=store/node3 --peer=@node1.json --peer=@node2.json node3

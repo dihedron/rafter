@@ -1,4 +1,4 @@
-package main
+package application
 
 import (
 	"context"
@@ -9,18 +9,18 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/Jille/raft-grpc-example/proto"
 	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
+	pb "github.com/dihedron/rafter/proto"
 	"github.com/hashicorp/raft"
 )
 
 // wordTracker keeps track of the three longest words it ever saw.
-type wordTracker struct {
+type WordTracker struct {
 	mtx   sync.RWMutex
 	words [3]string
 }
 
-var _ raft.FSM = &wordTracker{}
+var _ raft.FSM = &WordTracker{}
 
 // compareWords returns true if a is longer (lexicography breaking ties).
 func compareWords(a, b string) bool {
@@ -36,7 +36,7 @@ func cloneWords(words [3]string) []string {
 	return ret[:]
 }
 
-func (f *wordTracker) Apply(l *raft.Log) interface{} {
+func (f *WordTracker) Apply(l *raft.Log) interface{} {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 	w := string(l.Data)
@@ -50,12 +50,12 @@ func (f *wordTracker) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (f *wordTracker) Snapshot() (raft.FSMSnapshot, error) {
+func (f *WordTracker) Snapshot() (raft.FSMSnapshot, error) {
 	// Make sure that any future calls to f.Apply() don't change the snapshot.
-	return &snapshot{cloneWords(f.words)}, nil
+	return &Snapshot{cloneWords(f.words)}, nil
 }
 
-func (f *wordTracker) Restore(r io.ReadCloser) error {
+func (f *WordTracker) Restore(r io.ReadCloser) error {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
@@ -65,11 +65,11 @@ func (f *wordTracker) Restore(r io.ReadCloser) error {
 	return nil
 }
 
-type snapshot struct {
+type Snapshot struct {
 	words []string
 }
 
-func (s *snapshot) Persist(sink raft.SnapshotSink) error {
+func (s *Snapshot) Persist(sink raft.SnapshotSink) error {
 	_, err := sink.Write([]byte(strings.Join(s.words, "\n")))
 	if err != nil {
 		sink.Cancel()
@@ -78,15 +78,23 @@ func (s *snapshot) Persist(sink raft.SnapshotSink) error {
 	return sink.Close()
 }
 
-func (s *snapshot) Release() {
+func (s *Snapshot) Release() {
 }
 
-type rpcInterface struct {
-	wordTracker *wordTracker
+type RPCInterface struct {
+	pb.UnimplementedExampleServer
+	wordTracker *WordTracker
 	raft        *raft.Raft
 }
 
-func (r rpcInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.AddWordResponse, error) {
+func NewRPCInterface(wt *WordTracker, r *raft.Raft) *RPCInterface {
+	return &RPCInterface{
+		wordTracker: wt,
+		raft:        r,
+	}
+}
+
+func (r RPCInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.AddWordResponse, error) {
 	f := r.raft.Apply([]byte(req.GetWord()), time.Second)
 	if err := f.Error(); err != nil {
 		return nil, rafterrors.MarkRetriable(err)
@@ -96,7 +104,7 @@ func (r rpcInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.
 	}, nil
 }
 
-func (r rpcInterface) GetWords(ctx context.Context, req *pb.GetWordsRequest) (*pb.GetWordsResponse, error) {
+func (r RPCInterface) GetWords(ctx context.Context, req *pb.GetWordsRequest) (*pb.GetWordsResponse, error) {
 	r.wordTracker.mtx.RLock()
 	defer r.wordTracker.mtx.RUnlock()
 	return &pb.GetWordsResponse{
