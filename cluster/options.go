@@ -27,7 +27,9 @@ func WithDirectory(dir string) Option {
 func WithNetAddress(address string) Option {
 	return func(c *Cluster) {
 		if address != "" {
-			c.address = address
+			a := &Address{}
+			a.UnmarshalFlag(address)
+			c.address = *a
 		}
 	}
 }

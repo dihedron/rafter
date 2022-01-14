@@ -3,22 +3,16 @@ package command
 import (
 	"context"
 	"fmt"
-	"log"
-	"net"
 	"os"
 	"path/filepath"
 
-	"github.com/Jille/raft-grpc-leader-rpc/leaderhealth"
 	transport "github.com/Jille/raft-grpc-transport"
-	"github.com/Jille/raftadmin"
-	"github.com/dihedron/rafter/application"
+	"github.com/dihedron/rafter/cache"
 	"github.com/dihedron/rafter/cluster"
 	"github.com/dihedron/rafter/logging"
-	pb "github.com/dihedron/rafter/proto"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 type Run2 struct {
@@ -39,51 +33,45 @@ func (cmd *Run2) Execute(args []string) error {
 
 	logger := logging.NewConsoleLogger(os.Stdout)
 
-	ctx := context.Background()
-	// _, port, err := net.SplitHostPort(*myAddr)
-	// if err != nil {
-	// 	log.Fatalf("failed to parse local address (%q): %v", *myAddr, err)
-	// }
-	sock, err := net.Listen("tcp", fmt.Sprintf(":%d", cmd.Address.Port))
+	fsm := cache.New()
+
+	c, err := cluster.New(
+		args[0],
+		fsm,
+		cluster.WithDirectory(cmd.Directory),
+		cluster.WithNetAddress(cmd.Address.String()),
+		cluster.WithPeers(cmd.Peers...),
+		cluster.WithLogger(logger),
+		cluster.WithBootstrap(cmd.Bootstrap),
+	)
 	if err != nil {
-		logger.Error("failed to listen: %v", err)
-		panic(err)
+		return fmt.Errorf("error creating new cluster: %w", err)
 	}
-
-	wt := &application.WordTracker{}
-
-	r, tm, err := cmd.NewRaft(ctx, args[0], cmd.Address.String(), wt)
-	if err != nil {
-		log.Fatalf("failed to start raft: %v", err)
-	}
-	s := grpc.NewServer()
-	pb.RegisterExampleServer(s, application.NewRPCInterface(wt, r))
-	tm.Register(s)
-	leaderhealth.Setup(r, s, []string{"Example"})
-	raftadmin.Register(s, r)
-	reflection.Register(s)
-	if err := s.Serve(sock); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
-
+	c.Test()
 	/*
-		fsm := cache.New()
-
-		c, err := cluster.New(
-			args[0],
-			fsm,
-			cluster.WithDirectory(cmd.Directory),
-			cluster.WithNetAddress(cmd.Address.String()),
-			cluster.WithPeers(cmd.Peers...),
-			cluster.WithLogger(logger),
-			cluster.WithBootstrap(cmd.Bootstrap),
-		)
+		sock, err := net.Listen("tcp", fmt.Sprintf(":%d", cmd.Address.Port))
 		if err != nil {
-			return fmt.Errorf("error creating new cluster: %w", err)
+			logger.Error("failed to listen: %v", err)
+			panic(err)
 		}
-		c.Test()
-	*/
 
+		wt := &application.WordTracker{}
+
+		ctx := context.Background()
+		r, tm, err := cmd.NewRaft(ctx, args[0], cmd.Address.String(), wt)
+		if err != nil {
+			log.Fatalf("failed to start raft: %v", err)
+		}
+		s := grpc.NewServer()
+		pb.RegisterExampleServer(s, application.NewRPCInterface(wt, r))
+		tm.Register(s)
+		leaderhealth.Setup(r, s, []string{"Example"})
+		raftadmin.Register(s, r)
+		reflection.Register(s)
+		if err := s.Serve(sock); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	*/
 	return nil
 }
 
@@ -116,22 +104,11 @@ func (cmd *Run2) NewRaft(ctx context.Context, myID, myAddress string, fsm raft.F
 	}
 
 	if cmd.Bootstrap {
-		// cfg := raft.Configuration{
-		// 	Servers: []raft.Server{
-		// 		{
-		// 			Suffrage: raft.Voter,
-		// 			ID:       raft.ServerID(myID),
-		// 			Address:  raft.ServerAddress(myAddress),
-		// 		},
-		// 	},
-		// }
 		servers := []raft.Server{
 			{
 				ID:       raft.ServerID(myID),
 				Suffrage: raft.Voter,
-				//Address: transport.LocalAddr(),
-				Address: tm.Transport().LocalAddr(),
-				// Address: raft.ServerAddress(myAddress),
+				Address:  tm.Transport().LocalAddr(),
 			},
 		}
 		if len(cmd.Peers) > 0 {

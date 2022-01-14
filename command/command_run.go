@@ -1,14 +1,6 @@
 package command
 
-import (
-	"fmt"
-	"os"
-
-	"github.com/dihedron/rafter/cache"
-	"github.com/dihedron/rafter/cluster"
-	"github.com/dihedron/rafter/logging"
-)
-
+/*
 type Run struct {
 	Bootstrap bool `short:"b" long:"bootstrap" description:"Whether to boostrap the cluster." optional:"yes"`
 	// Address is the intra-cluster bind address for Raft communications.
@@ -45,3 +37,4 @@ func (cmd *Run) Execute(args []string) error {
 
 	return nil
 }
+*/
