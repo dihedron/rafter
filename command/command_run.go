@@ -47,31 +47,8 @@ func (cmd *Run) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating new cluster: %w", err)
 	}
-	c.Test()
-	/*
-		sock, err := net.Listen("tcp", fmt.Sprintf(":%d", cmd.Address.Port))
-		if err != nil {
-			logger.Error("failed to listen: %v", err)
-			panic(err)
-		}
+	c.Test() // never reached!
 
-		wt := &application.WordTracker{}
-
-		ctx := context.Background()
-		r, tm, err := cmd.NewRaft(ctx, args[0], cmd.Address.String(), wt)
-		if err != nil {
-			log.Fatalf("failed to start raft: %v", err)
-		}
-		s := grpc.NewServer()
-		pb.RegisterExampleServer(s, application.NewRPCInterface(wt, r))
-		tm.Register(s)
-		leaderhealth.Setup(r, s, []string{"Example"})
-		raftadmin.Register(s, r)
-		reflection.Register(s)
-		if err := s.Serve(sock); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	*/
 	return nil
 }
 

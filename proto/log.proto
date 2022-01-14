@@ -1,30 +1,14 @@
 syntax = "proto3";
 
-option go_package = "github.com/dihedron/rafter/proto";
+option go_package = "github.com/dihedron/rafter/protobuf";
 
-service Example {
-	rpc AddWord(AddWordRequest) returns (AddWordResponse) {}
-	rpc GetWords(GetWordsRequest) returns (GetWordsResponse) {}
+service Log {
+	// rpc AddWord(AddWordRequest) returns (AddWordResponse) {}
+	// rpc GetWords(GetWordsRequest) returns (GetWordsResponse) {}
 	rpc Set(SetRequest) returns (SetResponse) {}
 	rpc Get(GetRequest) returns (GetResponse) {}
 	rpc Delete(DeleteRequest) returns (DeleteResponse) {}
 	rpc List(ListRequest) returns (ListResponse) {}
-}
-
-message AddWordRequest {
-	string word = 1;
-}
-
-message AddWordResponse {
-	uint64 commit_index = 1;
-}
-
-message GetWordsRequest {
-}
-
-message GetWordsResponse {
-	uint64 read_at_index = 1;
-	repeated string best_words = 2;
 }
 
 message SetRequest {

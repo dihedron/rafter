@@ -65,9 +65,9 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 		log.Fatalf("failed to start raft: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterExampleServer(s, application.NewRPCInterface(cache, r))
+	pb.RegisterLogServer(s, application.NewRPCInterface(cache, r))
 	tm.Register(s)
-	leaderhealth.Setup(r, s, []string{"Example"})
+	leaderhealth.Setup(r, s, []string{"Log"})
 	raftadmin.Register(s, r)
 	reflection.Register(s)
 	if err := s.Serve(sock); err != nil {

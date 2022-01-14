@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/Jille/grpc-multi-resolver v1.0.0
-	github.com/Jille/raft-grpc-example v0.0.0-20210903180454-cd5bcab0218f
 	github.com/Jille/raft-grpc-leader-rpc v1.1.0
 	github.com/Jille/raft-grpc-transport v1.2.0
 	github.com/Jille/raftadmin v1.2.0
@@ -27,8 +26,10 @@ require (
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/goreman v0.3.9 // indirect
 	golang.org/x/net v0.0.0-20210907225631-ff17edfbf26d // indirect
 	golang.org/x/sys v0.0.0-20220111092808-5a964db01320 // indirect
 	golang.org/x/text v0.3.7 // indirect

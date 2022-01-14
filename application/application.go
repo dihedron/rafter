@@ -24,20 +24,6 @@ type Cache struct {
 
 var _ raft.FSM = &Cache{}
 
-// compareWords returns true if a is longer (lexicography breaking ties).
-func compareWords(a, b string) bool {
-	if len(a) == len(b) {
-		return a < b
-	}
-	return len(a) > len(b)
-}
-
-func cloneWords(words [3]string) []string {
-	var ret [3]string
-	copy(ret[:], words[:])
-	return ret[:]
-}
-
 func (f *Cache) Apply(l *raft.Log) interface{} {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
@@ -65,4 +51,18 @@ func (f *Cache) Restore(r io.ReadCloser) error {
 	words := strings.Split(string(b), "\n")
 	copy(f.words[:], words)
 	return nil
+}
+
+// compareWords returns true if a is longer (lexicography breaking ties).
+func compareWords(a, b string) bool {
+	if len(a) == len(b) {
+		return a < b
+	}
+	return len(a) > len(b)
+}
+
+func cloneWords(words [3]string) []string {
+	var ret [3]string
+	copy(ret[:], words[:])
+	return ret[:]
 }
