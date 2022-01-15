@@ -3,10 +3,10 @@ module github.com/dihedron/rafter
 go 1.17
 
 require (
-	github.com/Jille/grpc-multi-resolver v1.0.0
 	github.com/Jille/raft-grpc-leader-rpc v1.1.0
 	github.com/Jille/raft-grpc-transport v1.2.0
 	github.com/Jille/raftadmin v1.2.0
+	github.com/dihedron/grpc-multi-resolver v1.0.1
 	github.com/fatih/color v1.13.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/hashicorp/raft v1.3.3
@@ -33,3 +33,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220114231437-d2e6a121cae0 // indirect
 )
+
+// replace github.com/Jille/grpc-multi-resolver => /home/developer/projects/go/grpc-multi-resolver

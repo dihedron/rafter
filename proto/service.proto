@@ -13,22 +13,6 @@ service Log {
 	rpc Clear(ClearRequest) returns (ClearResponse) {}
 }
 
-// message AddWordRequest {
-// 	string word = 1;
-// }
-
-// message AddWordResponse {
-// 	uint64 commit_index = 1;
-// }
-
-message GetWordsRequest {
-}
-
-message GetWordsResponse {
-	uint64 read_at_index = 1;
-	repeated string best_words = 2;
-}
-
 message SetRequest {
 	string key = 1;
 	string value = 2;
@@ -45,6 +29,7 @@ message GetRequest {
 message GetResponse{
 	string key = 1;
 	string value = 2;
+	uint64 index = 3;
 }
 
 message RemoveRequest {
@@ -62,7 +47,8 @@ message ListRequest {
 }
 
 message ListResponse{
-	repeated string key = 1;
+	uint64 index = 1;
+	repeated string keys = 2;
 }
 
 message ClearRequest {

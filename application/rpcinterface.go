@@ -39,7 +39,7 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 
 	f := r.raft.Apply(data, time.Second)
 	if err := f.Error(); err != nil {
-		r.logger.Error("error masrhalling Get message to JSON: %v", err)
+		r.logger.Error("error applying Get message to cluster: %v", err)
 		return nil, rafterrors.MarkRetriable(err)
 	}
 
@@ -48,10 +48,108 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 	return &pb.GetResponse{
 		Key:   request.Key,
 		Value: message.Value,
+		Index: f.Index(),
 	}, nil
-	// return &pb.AddWordResponse{
-	// 	CommitIndex: f.Index(),
-	// }, nil
+}
+
+func (r RPCInterface) Set(ctx context.Context, request *pb.SetRequest) (*pb.SetResponse, error) {
+	message := &Message{
+		Type:  Set,
+		Key:   request.Key,
+		Value: request.Value,
+	}
+	data, err := json.Marshal(message)
+	if err != nil {
+		r.logger.Error("error marshalling Set message to JSON: %v", err)
+		return nil, err
+	}
+
+	f := r.raft.Apply(data, time.Second)
+	if err := f.Error(); err != nil {
+		r.logger.Error("error applying Set message to cluster: %v", err)
+		return nil, rafterrors.MarkRetriable(err)
+	}
+
+	message = f.Response().(*Message)
+
+	return &pb.SetResponse{
+		Index: f.Index(),
+	}, nil
+}
+
+func (r RPCInterface) Remove(ctx context.Context, request *pb.RemoveRequest) (*pb.RemoveResponse, error) {
+	message := &Message{
+		Type: Remove,
+		Key:  request.Key,
+	}
+	data, err := json.Marshal(message)
+	if err != nil {
+		r.logger.Error("error marshalling Remove message to JSON: %v", err)
+		return nil, err
+	}
+
+	f := r.raft.Apply(data, time.Second)
+	if err := f.Error(); err != nil {
+		r.logger.Error("error applying Remove message to cluster: %v", err)
+		return nil, rafterrors.MarkRetriable(err)
+	}
+
+	message = f.Response().(*Message)
+
+	return &pb.RemoveResponse{
+		Key:   message.Key,
+		Value: message.Value,
+		Index: f.Index(),
+	}, nil
+}
+
+func (r RPCInterface) List(ctx context.Context, request *pb.ListRequest) (*pb.ListResponse, error) {
+	message := &Message{
+		Type:   List,
+		Filter: request.Filter,
+	}
+	data, err := json.Marshal(message)
+	if err != nil {
+		r.logger.Error("error marshalling List message to JSON: %v", err)
+		return nil, err
+	}
+
+	f := r.raft.Apply(data, time.Second)
+	if err := f.Error(); err != nil {
+		r.logger.Error("error applying List message to cluster: %v", err)
+		return nil, rafterrors.MarkRetriable(err)
+	}
+
+	message = f.Response().(*Message)
+
+	return &pb.ListResponse{
+		Keys:  message.Keys,
+		Index: f.Index(),
+	}, nil
+}
+
+func (r RPCInterface) Clear(ctx context.Context, request *pb.ClearRequest) (*pb.ClearResponse, error) {
+	message := &Message{
+		Type:   Clear,
+		Filter: request.Filter,
+	}
+	data, err := json.Marshal(message)
+	if err != nil {
+		r.logger.Error("error marshalling Clear message to JSON: %v", err)
+		return nil, err
+	}
+
+	f := r.raft.Apply(data, time.Second)
+	if err := f.Error(); err != nil {
+		r.logger.Error("error applying Clear message to cluster: %v", err)
+		return nil, rafterrors.MarkRetriable(err)
+	}
+
+	message = f.Response().(*Message)
+
+	return &pb.ClearResponse{
+		Index: f.Index(),
+	}, nil
 }
 
 // func (r RPCInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.AddWordResponse, error) {
