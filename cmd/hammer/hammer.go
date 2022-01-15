@@ -11,7 +11,7 @@ import (
 	"time"
 
 	_ "github.com/Jille/grpc-multi-resolver"
-	pb "github.com/Jille/raft-grpc-example/proto"
+	pb "github.com/dihedron/rafter/proto"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/health"
@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("dialing failed: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewExampleClient(conn)
+	c := pb.NewLogClient(conn)
 
 	ch := generateWords()
 
@@ -42,17 +42,17 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for w := range ch {
-				_, err := c.AddWord(context.Background(), &pb.AddWordRequest{Word: w})
+				_, err := c.Set(context.Background(), &pb.SetRequest{Key: "key", Value: w})
 				if err != nil {
-					log.Fatalf("AddWord RPC failed: %v", err)
+					log.Fatalf("Set RPC failed: %v", err)
 				}
 			}
 		}()
 	}
 	wg.Wait()
-	resp, err := c.GetWords(context.Background(), &pb.GetWordsRequest{})
+	resp, err := c.Get(context.Background(), &pb.GetRequest{Key: "key"})
 	if err != nil {
-		log.Fatalf("GetWords RPC failed: %v", err)
+		log.Fatalf("Get RPC failed: %v", err)
 	}
 	fmt.Println(resp)
 }
