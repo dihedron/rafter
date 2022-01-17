@@ -2,8 +2,6 @@ package logging
 
 import "os"
 
-type ConsoleLogger StreamLogger
-
 type Where int8
 
 const (
@@ -11,14 +9,14 @@ const (
 	StdErr
 )
 
-func NewConsoleLogger(where Where) *ConsoleLogger {
+func NewConsoleLogger(where Where) *StreamLogger {
 	switch where {
 	case StdOut:
-		return &ConsoleLogger{
+		return &StreamLogger{
 			stream: os.Stdout,
 		}
 	case StdErr:
-		return &ConsoleLogger{
+		return &StreamLogger{
 			stream: os.Stderr,
 		}
 	}

@@ -32,7 +32,8 @@ func (cmd *Run) Execute(args []string) error {
 	fmt.Printf("starting a node at '%s' (base directory '%s'), with peers %+v\n", cmd.Address, cmd.Directory, cmd.Peers)
 
 	//logger := logging.NewConsoleLogger(logging.StdOut)
-	logger := logging.NewLogLogger("rafter")
+	// logger := logging.NewLogLogger("rafter")
+	logger := logging.NewConsoleLogger(logging.StdOut)
 
 	fsm := cache.New()
 

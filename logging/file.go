@@ -2,14 +2,12 @@ package logging
 
 import "os"
 
-type FileLogger StreamLogger
-
-func NewFileLogger(path string) *FileLogger {
+func NewFileLogger(path string) *StreamLogger {
 	file, err := os.Create(path)
 	if err != nil {
 		return nil
 	}
-	return &FileLogger{
+	return &StreamLogger{
 		stream: file,
 	}
 }

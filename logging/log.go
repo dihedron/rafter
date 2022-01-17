@@ -8,16 +8,12 @@ import (
 )
 
 type LogLogger struct {
-	BaseLogger
 	logger *log.Logger
 }
 
 func NewLogLogger(prefix string) *LogLogger {
 	return &LogLogger{
 		logger: log.New(os.Stderr, prefix, log.Ltime|log.Ldate|log.Lmicroseconds),
-		BaseLogger: BaseLogger{
-			Values: []interface{}{},
-		},
 	}
 }
 

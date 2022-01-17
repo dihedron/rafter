@@ -13,15 +13,11 @@ import (
 const TimeFormat = "2006-01-02T15:04:05.999-0700"
 
 type StreamLogger struct {
-	BaseLogger
 	stream *os.File
 }
 
 func NewStreamLogger(stream *os.File) *StreamLogger {
 	return &StreamLogger{
-		BaseLogger: BaseLogger{
-			Values: []interface{}{},
-		},
 		stream: stream,
 	}
 }
@@ -67,12 +63,6 @@ func (l *StreamLogger) Error(msg string, args ...interface{}) {
 }
 
 func (l *StreamLogger) write(level string, msg string, args ...interface{}) {
-	message := ""
-	if len(l.Values) > 0 {
-		args = append(args, l.Values)
-		message = fmt.Sprintf(strings.TrimSpace(msg)+" (context: %+v)", args...)
-	} else {
-		message = fmt.Sprintf(strings.TrimSpace(msg), args...)
-	}
+	message := fmt.Sprintf(strings.TrimSpace(msg), args...)
 	fmt.Fprintf(l.stream, "%s [%s] %s\n", time.Now().Format(TimeFormat), level, message)
 }

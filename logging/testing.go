@@ -7,15 +7,11 @@ import (
 )
 
 type TestingLogger struct {
-	BaseLogger
 	t *testing.T
 }
 
 func NewTestingLogger(t *testing.T) *TestingLogger {
 	return &TestingLogger{
-		BaseLogger: BaseLogger{
-			Values: []interface{}{},
-		},
 		t: t,
 	}
 }
@@ -46,12 +42,6 @@ func (l *TestingLogger) Error(msg string, args ...interface{}) {
 }
 
 func (l *TestingLogger) format(level string, msg string, args ...interface{}) string {
-	message := ""
-	if len(l.Values) > 0 {
-		args = append(args, l.Values)
-		message = fmt.Sprintf("["+level+"] "+strings.TrimSpace(msg)+" (context: %+v)", args...)
-	} else {
-		message = fmt.Sprintf("["+level+"] "+strings.TrimSpace(msg), args...)
-	}
+	message := fmt.Sprintf("["+level+"] "+strings.TrimSpace(msg), args...)
 	return strings.TrimRight(message, "\n\r")
 }
