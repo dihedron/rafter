@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -23,7 +22,7 @@ type Get struct {
 
 func (cmd *Get) Execute(args []string) error {
 
-	logger := logging.NewConsoleLogger(os.Stdout)
+	logger := logging.NewConsoleLogger(logging.StdOut)
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "Log"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{

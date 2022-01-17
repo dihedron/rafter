@@ -1,3 +1,3 @@
 #!/bin/bash
 
-../../rafter log get --key=pippo --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json
+../../rafter data get --key=pippo --peer=@node1.json --peer=@node2.json --peer=@node3.json --peer=@node4.json --peer=@node5.json

@@ -57,6 +57,8 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 		return nil, fmt.Errorf("failed to listen on '%s': %w", c.address.String(), err)
 	}
 
+	c.logger.Info("TCP address %s available", c.address.String())
+
 	cache := application.New(c.logger)
 
 	// initialise the Raft cluster
