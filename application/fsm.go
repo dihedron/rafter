@@ -1,8 +1,10 @@
 package application
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 
@@ -31,6 +33,7 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 	c.logger.Debug("log entry is of type %T", l)
+	fmt.Fprintf(os.Stderr, "log entry is of type %T", l)
 	w := string(l.Data)
 	for i := 0; i < len(c.words); i++ {
 		if compareWords(w, c.words[i]) {

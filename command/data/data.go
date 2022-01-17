@@ -1,4 +1,4 @@
-package log
+package data
 
 import "github.com/dihedron/rafter/cluster"
 
@@ -7,7 +7,7 @@ type Base struct {
 }
 
 // Log is the set of distributed log related commands.
-type Log struct {
+type Data struct {
 	Set Set `command:"set" alias:"s" description:"Set a value in the distributed log."`
 
 	Get Get `command:"get" alias:"g" description:"Get a value from a distributed log."`

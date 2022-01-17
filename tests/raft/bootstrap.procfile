@@ -4,15 +4,15 @@ setup: mkdir -p store/
 # goreman -f bootstrap.procfile start
 
 # start by pootstrapping (at least) one node
-node1: ../../rafter run --address=localhost:7001 --directory=store/node1 --peer=@node2.json --peer=@node3.json --peer=@node4.json --peer=@node5.json node1 --bootstrap 
-node2: ../../rafter run --address=localhost:7002 --directory=store/node2 --peer=@node1.json --peer=@node3.json --peer=@node4.json --peer=@node5.json node2
-node3: ../../rafter run --address=localhost:7003 --directory=store/node3 --peer=@node1.json --peer=@node2.json --peer=@node4.json --peer=@node5.json node3
-node4: ../../rafter run --address=localhost:7004 --directory=store/node4 --peer=@node1.json --peer=@node2.json --peer=@node3.json --peer=@node5.json node4
-node5: ../../rafter run --address=localhost:7005 --directory=store/node5 --peer=@node1.json --peer=@node2.json --peer=@node3.json --peer=@node4.json node5
+node1: ./rafter run --address=localhost:7001 --directory=tests/raft/store/node1 --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node1 --bootstrap 
+node2: ./rafter run --address=localhost:7002 --directory=tests/raft/store/node2 --peer=@tests/raft/node1.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node2
+node3: ./rafter run --address=localhost:7003 --directory=tests/raft/store/node3 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node3
+node4: ./rafter run --address=localhost:7004 --directory=tests/raft/store/node4 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node5.json node4
+node5: ./rafter run --address=localhost:7005 --directory=tests/raft/store/node5 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json node5
 
 # once the cluster has been bootstrapped, no need to do it again
-# node1: ../../rafter run --address=localhost:7001 --directory=store/node1 --peer=@node2.json --peer=@node3.json --peer=@node4.json --peer=@node5.json node1
-# node2: ../../rafter run --address=localhost:7002 --directory=store/node2 --peer=@node1.json --peer=@node3.json --peer=@node4.json --peer=@node5.json node2
-# node3: ../../rafter run --address=localhost:7003 --directory=store/node3 --peer=@node1.json --peer=@node2.json --peer=@node4.json --peer=@node5.json node3
-# node4: ../../rafter run --address=localhost:7004 --directory=store/node4 --peer=@node1.json --peer=@node2.json --peer=@node3.json --peer=@node5.json node4
-# node5: ../../rafter run --address=localhost:7005 --directory=store/node5 --peer=@node1.json --peer=@node2.json --peer=@node3.json --peer=@node4.json node5
+# node1: ./rafter run --address=localhost:7001 --directory=tests/raft/store/node1 --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node1
+# node2: ./rafter run --address=localhost:7002 --directory=tests/raft/store/node2 --peer=@tests/raft/node1.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node2
+# node3: ./rafter run --address=localhost:7003 --directory=tests/raft/store/node3 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node3
+# node4: ./rafter run --address=localhost:7004 --directory=tests/raft/store/node4 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node5.json node4
+# node5: ./rafter run --address=localhost:7005 --directory=tests/raft/store/node5 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json node5
