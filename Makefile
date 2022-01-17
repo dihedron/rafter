@@ -2,12 +2,18 @@
 binary:
 	@go build
 
-.PHONY: protobuf
-protobuf: service.proto
-	cd proto
-	rm -f service.pb.go service_grpc.pb.go
-	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative service.proto
-	cd..
+.PHONY: clean
+clean:
+	go clean
+
+.PHONY: reset
+reset:
+	go clean -x -cache
+
+.PHONY: proto
+proto: proto/service.proto
+	rm -f proto/service.pb.go proto/service_grpc.pb.go
+	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/service.proto
 
 .PHONY: run
 run: binary
