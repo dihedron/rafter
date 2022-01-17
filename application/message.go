@@ -11,7 +11,7 @@ const (
 )
 
 type Message struct {
-	Type   Type     `json:"type,omitempty"`
+	Type   Type     `json:"type"`
 	Key    string   `json:"key,omitempty"`
 	Value  string   `json:"value,omitempty"`
 	Filter string   `json:"filter,omitempty"`

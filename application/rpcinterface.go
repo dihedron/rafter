@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
@@ -31,6 +32,8 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 		Type: Get,
 		Key:  request.Key,
 	}
+
+	r.logger.Info("message received: %s", logging.ToJSON(message))
 	data, err := json.Marshal(message)
 	if err != nil {
 		r.logger.Error("error marshalling Get message to JSON: %v", err)
@@ -43,13 +46,23 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 		return nil, rafterrors.MarkRetriable(err)
 	}
 
-	message = f.Response().(*Message)
+	//r.logger.Info("apply successful, got %s", string(f.Response()))
 
-	return &pb.GetResponse{
-		Key:   request.Key,
-		Value: message.Value,
-		Index: f.Index(),
-	}, nil
+	if f.Response() != nil {
+		data = f.Response().([]byte)
+		message := &Message{}
+		if err := json.Unmarshal(data, message); err != nil {
+			r.logger.Error("error unmarshalling response to Get message from cluster: %v", err)
+			return nil, rafterrors.MarkRetriable(err)
+		}
+		return &pb.GetResponse{
+			Key:   request.Key,
+			Value: message.Value,
+			Index: f.Index(),
+		}, nil
+	}
+
+	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
 func (r RPCInterface) Set(ctx context.Context, request *pb.SetRequest) (*pb.SetResponse, error) {

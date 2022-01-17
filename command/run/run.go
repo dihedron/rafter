@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	transport "github.com/Jille/raft-grpc-transport"
-	"github.com/dihedron/rafter/cache"
+	"github.com/dihedron/rafter/application"
 	"github.com/dihedron/rafter/cluster"
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
@@ -35,7 +35,7 @@ func (cmd *Run) Execute(args []string) error {
 	// logger := logging.NewLogLogger("rafter")
 	logger := logging.NewConsoleLogger(logging.StdOut)
 
-	fsm := cache.New()
+	fsm := application.New(logger)
 
 	c, err := cluster.New(
 		args[0],

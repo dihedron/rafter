@@ -15,11 +15,12 @@ service Log {
 
 message SetRequest {
 	string key = 1;
-	string value = 2;
+	string value = 2;	
 }
 
 message SetResponse {
 	uint64 index = 1;
+	string error = 2;
 }
 
 message GetRequest {
@@ -27,9 +28,10 @@ message GetRequest {
 }
 
 message GetResponse{
-	string key = 1;
-	string value = 2;
-	uint64 index = 3;
+	uint64 index = 1;
+	string key = 2;
+	string value = 3;
+	string error = 4;
 }
 
 message RemoveRequest {
@@ -37,9 +39,10 @@ message RemoveRequest {
 }
 
 message RemoveResponse{
-	string key = 1;
-	string value = 2;
-	uint64 index = 3;
+	uint64 index = 1;
+	string key = 2;
+	string value = 3;
+	string error = 4;
 }
 
 message ListRequest {
@@ -48,7 +51,8 @@ message ListRequest {
 
 message ListResponse{
 	uint64 index = 1;
-	repeated string keys = 2;
+	string error = 2;
+	repeated string keys = 3;
 }
 
 message ClearRequest {
@@ -57,4 +61,5 @@ message ClearRequest {
 
 message ClearResponse{
 	uint64 index = 1;
+	string error = 2;
 }
