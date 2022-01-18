@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
@@ -49,17 +50,22 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 	//r.logger.Info("apply successful, got %s", string(f.Response()))
 
 	if f.Response() != nil {
-		data = f.Response().([]byte)
-		message := &Message{}
-		if err := json.Unmarshal(data, message); err != nil {
-			r.logger.Error("error unmarshalling response to Get message from cluster: %v", err)
-			return nil, rafterrors.MarkRetriable(err)
+		switch response := f.Response().(type) {
+		case error:
+			r.logger.Error("received error from FSM: %v", response)
+			return nil, rafterrors.MarkRetriable(response)
+		case []byte:
+			message := &Message{}
+			if err := json.Unmarshal(response, message); err != nil {
+				r.logger.Error("error unmarshalling response to Get message from cluster: %v", err)
+				return nil, rafterrors.MarkRetriable(err)
+			}
+			return &pb.GetResponse{
+				Key:   request.Key,
+				Value: message.Value,
+				Index: f.Index(),
+			}, nil
 		}
-		return &pb.GetResponse{
-			Key:   request.Key,
-			Value: message.Value,
-			Index: f.Index(),
-		}, nil
 	}
 
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
@@ -83,11 +89,24 @@ func (r RPCInterface) Set(ctx context.Context, request *pb.SetRequest) (*pb.SetR
 		return nil, rafterrors.MarkRetriable(err)
 	}
 
-	message = f.Response().(*Message)
+	if f.Response() != nil {
+		switch response := f.Response().(type) {
+		case error:
+			r.logger.Error("received error from FSM: %v", response)
+			return nil, rafterrors.MarkRetriable(response)
+		case []byte:
+			message := &Message{}
+			if err := json.Unmarshal(response, message); err != nil {
+				r.logger.Error("error unmarshalling response to Set message from cluster: %v", err)
+				return nil, rafterrors.MarkRetriable(err)
+			}
+			return &pb.SetResponse{
+				Index: f.Index(),
+			}, nil
+		}
+	}
 
-	return &pb.SetResponse{
-		Index: f.Index(),
-	}, nil
+	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
 func (r RPCInterface) Remove(ctx context.Context, request *pb.RemoveRequest) (*pb.RemoveResponse, error) {
@@ -103,20 +122,39 @@ func (r RPCInterface) Remove(ctx context.Context, request *pb.RemoveRequest) (*p
 
 	f := r.raft.Apply(data, time.Second)
 	if err := f.Error(); err != nil {
-		r.logger.Error("error applying Remove message to cluster: %v", err)
+		r.logger.Error("error applying Set message to cluster: %v", err)
 		return nil, rafterrors.MarkRetriable(err)
 	}
 
-	message = f.Response().(*Message)
+	if f.Response() != nil {
+		switch response := f.Response().(type) {
+		case error:
+			r.logger.Error("received error from FSM: %v", response)
+			return nil, rafterrors.MarkRetriable(response)
+		case []byte:
+			message := &Message{}
+			if err := json.Unmarshal(response, message); err != nil {
+				r.logger.Error("error unmarshalling response to Remove message from cluster: %v", err)
+				return nil, rafterrors.MarkRetriable(err)
+			}
+			return &pb.RemoveResponse{
+				Key:   message.Key,
+				Value: message.Value,
+				Index: f.Index(),
+			}, nil
+		}
+	}
 
-	return &pb.RemoveResponse{
-		Key:   message.Key,
-		Value: message.Value,
-		Index: f.Index(),
-	}, nil
+	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
 func (r RPCInterface) List(ctx context.Context, request *pb.ListRequest) (*pb.ListResponse, error) {
+	if request.Filter != "" {
+		// perform sanity check on regexp before sending to FSM
+		if _, err := regexp.Compile(request.Filter); err != nil {
+			return nil, err
+		}
+	}
 	message := &Message{
 		Type:   List,
 		Filter: request.Filter,
@@ -133,12 +171,25 @@ func (r RPCInterface) List(ctx context.Context, request *pb.ListRequest) (*pb.Li
 		return nil, rafterrors.MarkRetriable(err)
 	}
 
-	message = f.Response().(*Message)
+	if f.Response() != nil {
+		switch response := f.Response().(type) {
+		case error:
+			r.logger.Error("received error from FSM: %v", response)
+			return nil, rafterrors.MarkRetriable(response)
+		case []byte:
+			message := &Message{}
+			if err := json.Unmarshal(response, message); err != nil {
+				r.logger.Error("error unmarshalling response to List message from cluster: %v", err)
+				return nil, rafterrors.MarkRetriable(err)
+			}
+			return &pb.ListResponse{
+				Keys:  message.Keys,
+				Index: f.Index(),
+			}, nil
+		}
+	}
 
-	return &pb.ListResponse{
-		Keys:  message.Keys,
-		Index: f.Index(),
-	}, nil
+	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
 func (r RPCInterface) Clear(ctx context.Context, request *pb.ClearRequest) (*pb.ClearResponse, error) {
@@ -158,11 +209,24 @@ func (r RPCInterface) Clear(ctx context.Context, request *pb.ClearRequest) (*pb.
 		return nil, rafterrors.MarkRetriable(err)
 	}
 
-	message = f.Response().(*Message)
+	if f.Response() != nil {
+		switch response := f.Response().(type) {
+		case error:
+			r.logger.Error("received error from FSM: %v", response)
+			return nil, rafterrors.MarkRetriable(response)
+		case []byte:
+			message := &Message{}
+			if err := json.Unmarshal(response, message); err != nil {
+				r.logger.Error("error unmarshalling response to Clear message from cluster: %v", err)
+				return nil, rafterrors.MarkRetriable(err)
+			}
+			return &pb.ClearResponse{
+				Index: f.Index(),
+			}, nil
+		}
+	}
 
-	return &pb.ClearResponse{
-		Index: f.Index(),
-	}, nil
+	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
 // func (r RPCInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.AddWordResponse, error) {

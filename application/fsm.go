@@ -2,8 +2,10 @@ package application
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +15,7 @@ import (
 )
 
 func New(l logging.Logger) *Cache {
-	l.Info("creating application...")
+	l.Info("creating store...")
 	return &Cache{
 		cache:  map[string]string{},
 		logger: l,
@@ -31,12 +33,13 @@ type Cache struct {
 var _ raft.FSM = &Cache{}
 
 func (c *Cache) Apply(l *raft.Log) interface{} {
-	c.logger.Debug("log entry (type %T): %s", l, logging.ToJSON(l))
+	var err error
+	// c.logger.Debug("log entry (type %T): %s", l, logging.ToJSON(l))
 	time.Sleep(50 * time.Millisecond)
 	message := &Message{}
-	if err := json.Unmarshal(l.Data, message); err != nil {
+	if err = json.Unmarshal(l.Data, message); err != nil {
 		c.logger.Error("error unmarshalling message: %v", err)
-		return nil
+		return fmt.Errorf("error unmarshalling input message: %w", err)
 	}
 	var result *Message
 	switch message.Type {
@@ -59,7 +62,7 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 	case Remove:
 		c.mtx.Lock()
 		value := c.cache[message.Key]
-		c.cache[message.Key] = message.Value
+		delete(c.cache, message.Key)
 		c.mtx.Unlock()
 		result = &Message{
 			Key:   message.Key,
@@ -67,8 +70,35 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 			Index: l.Index,
 		}
 	case List:
-
+		var re *regexp.Regexp
+		if message.Filter != "" {
+			if re, err = regexp.Compile(message.Filter); err != nil {
+				c.logger.Error("error compiling regular expression '%s': %v", message.Filter, err)
+				return fmt.Errorf("error compiling regular expression '%s': %w", message.Filter, err)
+			}
+		}
+		c.mtx.RLock()
+		keys := []string{}
+		for k := range c.cache {
+			if re == nil || re.Match([]byte(k)) {
+				keys = append(keys, k)
+			}
+		}
+		c.mtx.RUnlock()
+		result = &Message{
+			Keys:  keys,
+			Index: l.Index,
+		}
 	case Clear:
+		c.mtx.Lock()
+		value := c.cache[message.Key]
+		c.cache[message.Key] = message.Value
+		c.mtx.Unlock()
+		result = &Message{
+			Key:   message.Key,
+			Value: value,
+			Index: l.Index,
+		}
 	}
 
 	data, err := json.Marshal(result)

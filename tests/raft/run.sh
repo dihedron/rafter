@@ -1,3 +1,24 @@
 #!/bin/bash
 
-../../rafter data get --key=pippo --peer=@node1.json --peer=@node2.json --peer=@node3.json --peer=@node4.json --peer=@node5.json
+
+function get {
+    ./rafter data get --key="${1}" --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json
+}
+
+function put {
+    ./rafter data set --key="${1}" --value="${2}" --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json
+}
+
+function list {
+    ./rafter data list --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json
+}
+
+function loop {
+    for i in $(seq 1 ${1}); do 
+        put "key_$i" "value_$i" 
+        get "key_$i" 
+    done
+}
+
+
+
