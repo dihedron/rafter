@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -119,31 +118,24 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 	// return nil
 }
 
-func (f *Cache) Snapshot() (raft.FSMSnapshot, error) {
+func (c *Cache) Snapshot() (raft.FSMSnapshot, error) {
 	// Make sure that any future calls to f.Apply() don't change the snapshot.
-	return &Snapshot{cloneWords(f.words)}, nil
+	data, err := json.Marshal(c.cache)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling snapshot content to JSON: %w", err)
+	}
+	return &Snapshot{data: data}, nil
 }
 
-func (f *Cache) Restore(r io.ReadCloser) error {
-	b, err := ioutil.ReadAll(r)
+func (c *Cache) Restore(r io.ReadCloser) error {
+	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	words := strings.Split(string(b), "\n")
-	copy(f.words[:], words)
-	return nil
-}
-
-// compareWords returns true if a is longer (lexicography breaking ties).
-func compareWords(a, b string) bool {
-	if len(a) == len(b) {
-		return a < b
+	cache := map[string]string{}
+	if err := json.Unmarshal(data, &cache); err != nil {
+		return fmt.Errorf("error unmarshalling snapshot content from JSON: %w", err)
 	}
-	return len(a) > len(b)
-}
-
-func cloneWords(words [3]string) []string {
-	var ret [3]string
-	copy(ret[:], words[:])
-	return ret[:]
+	c.cache = cache
+	return nil
 }

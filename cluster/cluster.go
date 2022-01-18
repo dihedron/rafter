@@ -85,6 +85,7 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(c.id)
+	config.SnapshotThreshold = 64
 	c.raft, err = raft.NewRaft(config, fsm, boltDB, boltDB, snapshots, c.transport.Transport())
 	if err != nil {
 		// TODO: logger.Error

@@ -2,20 +2,19 @@ package application
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/raft"
 )
 
 type Snapshot struct {
-	words []string
+	data []byte
 }
 
 func (s *Snapshot) Persist(sink raft.SnapshotSink) error {
-	_, err := sink.Write([]byte(strings.Join(s.words, "\n")))
+	_, err := sink.Write(s.data)
 	if err != nil {
 		sink.Cancel()
-		return fmt.Errorf("sink.Write(): %v", err)
+		return fmt.Errorf("error writing snapshot to sink: %v", err)
 	}
 	return sink.Close()
 }

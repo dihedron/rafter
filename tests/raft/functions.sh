@@ -23,6 +23,7 @@ function loop {
 function fill {
     for i in $(seq 1 ${1}); do 
         put "key_$i" "value_$i" 
+        get "key_$i" 
     done
 }
 
