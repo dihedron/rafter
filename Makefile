@@ -30,6 +30,10 @@ bootstrap3:
 	@rm -rf tests/raft/store
 	@make run3
 
+.PHONY: benchmark3
+benchmark3:
+	@./rafter data benchmark --length=64 --iterations=1000 --concurrency=100 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json  
+
 .PHONY: run5
 run5: binary
 	@if [ -d "tests/raft/store" ]; then \
@@ -44,3 +48,7 @@ run5: binary
 bootstrap5:
 	@rm -rf tests/raft/store
 	@make run5
+
+.PHONY: benchmark5
+benchmark5:
+	@./rafter data benchmark --length=64 --iterations=1000 --concurrency=100 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json 
