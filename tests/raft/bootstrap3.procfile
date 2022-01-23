@@ -1,0 +1,9 @@
+# Use goreman to run `go get github.com/mattn/goreman`
+setup: mkdir -p store/
+
+# goreman -f bootstrap.procfile start
+
+# start by bootstrapping (at least) one node
+node1: ./rafter run --address=localhost:7001 --directory=tests/raft/store/node1 --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json node1 --bootstrap 
+node2: ./rafter run --address=localhost:7002 --directory=tests/raft/store/node2 --peer=@tests/raft/node1.json --peer=@tests/raft/node3.json node2
+node3: ./rafter run --address=localhost:7003 --directory=tests/raft/store/node3 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json node3

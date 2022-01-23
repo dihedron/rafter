@@ -8,8 +8,8 @@ import (
 	"time"
 
 	_ "github.com/dihedron/grpc-multi-resolver"
+	pb "github.com/dihedron/rafter/application/proto"
 	"github.com/dihedron/rafter/logging"
-	pb "github.com/dihedron/rafter/proto"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/health"

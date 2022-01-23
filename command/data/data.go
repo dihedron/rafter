@@ -12,6 +12,8 @@ type Data struct {
 
 	Get Get `command:"get" alias:"g" description:"Get a value from a distributed log."`
 
+	Benchmark Benchmark `command:"benchmark" alias:"b" description:"Benchmark the speed of the distributed log."`
+
 	// Join Join `command:"join" alias:"j" description:"Join a node to the cluster."`
 
 	// Leave Leave `command:"leave" alias:"l" description:"Leave a node to the cluster."`

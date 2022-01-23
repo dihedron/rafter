@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
+	pb "github.com/dihedron/rafter/application/proto"
 	"github.com/dihedron/rafter/logging"
-	pb "github.com/dihedron/rafter/proto"
 	"github.com/hashicorp/raft"
 )
 
