@@ -32,6 +32,7 @@ type Benchmark struct {
 func (cmd *Benchmark) Execute(args []string) error {
 
 	logger := logging.NewConsoleLogger(logging.StdOut)
+	defer cmd.ProfileCPU(logger).Close()
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "Log"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{
@@ -100,6 +101,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 	}
 	elapsed := time.Since(start)
 	logger.Info("[FINAL] Benchmark run took %s", elapsed)
+	cmd.ProfileMemory(logger)
 	return nil
 }
 

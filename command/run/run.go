@@ -9,6 +9,7 @@ import (
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/dihedron/rafter/application"
 	"github.com/dihedron/rafter/cluster"
+	"github.com/dihedron/rafter/command/base"
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -16,6 +17,8 @@ import (
 )
 
 type Run struct {
+	base.Base
+	// Bootstrap starts the cluster in bootstrap mode.
 	Bootstrap bool `short:"b" long:"bootstrap" description:"Whether to boostrap the cluster." optional:"yes"`
 	// Address is the intra-cluster bind address for Raft communications.
 	Address cluster.Address `short:"a" long:"address" description:"The network address for Raft and exposed services." optional:"yes" default:"localhost:7001"`
@@ -31,9 +34,11 @@ func (cmd *Run) Execute(args []string) error {
 	}
 	fmt.Printf("starting a node at '%s' (base directory '%s'), with peers %+v\n", cmd.Address, cmd.Directory, cmd.Peers)
 
-	//logger := logging.NewConsoleLogger(logging.StdOut)
-	// logger := logging.NewLogLogger("rafter")
 	logger := logging.NewConsoleLogger(logging.StdOut)
+	// logger := logging.NewConsoleLogger(logging.StdOut)
+	// logger := logging.NewLogLogger("rafter")
+
+	defer cmd.ProfileCPU(logger).Close()
 
 	fsm := application.New(logger)
 
@@ -50,30 +55,7 @@ func (cmd *Run) Execute(args []string) error {
 		return fmt.Errorf("error creating new cluster: %w", err)
 	}
 	c.Test()
-	/*
-		sock, err := net.Listen("tcp", fmt.Sprintf(":%d", cmd.Address.Port))
-		if err != nil {
-			logger.Error("failed to listen: %v", err)
-			panic(err)
-		}
-
-		wt := &application.WordTracker{}
-
-		ctx := context.Background()
-		r, tm, err := cmd.NewRaft(ctx, args[0], cmd.Address.String(), wt)
-		if err != nil {
-			log.Fatalf("failed to start raft: %v", err)
-		}
-		s := grpc.NewServer()
-		pb.RegisterExampleServer(s, application.NewRPCInterface(wt, r))
-		tm.Register(s)
-		leaderhealth.Setup(r, s, []string{"Example"})
-		raftadmin.Register(s, r)
-		reflection.Register(s)
-		if err := s.Serve(sock); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	*/
+	cmd.ProfileMemory(logger)
 	return nil
 }
 

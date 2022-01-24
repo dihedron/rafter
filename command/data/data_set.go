@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/dihedron/grpc-multi-resolver"
 	pb "github.com/dihedron/rafter/application/proto"
+	"github.com/dihedron/rafter/logging"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/health"
@@ -22,7 +23,8 @@ type Set struct {
 
 func (cmd *Set) Execute(args []string) error {
 
-	// logger := logging.NewConsoleLogger(os.Stdout)
+	logger := logging.NewConsoleLogger(logging.StdOut)
+	defer cmd.ProfileCPU(logger).Close()
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "Log"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{
@@ -71,5 +73,6 @@ func (cmd *Set) Execute(args []string) error {
 	// 	log.Fatalf("Get RPC failed: %v", err)
 	// }
 	// fmt.Println(resp)
+	cmd.ProfileMemory(logger)
 	return nil
 }

@@ -23,6 +23,7 @@ type Get struct {
 func (cmd *Get) Execute(args []string) error {
 
 	logger := logging.NewConsoleLogger(logging.StdOut)
+	defer cmd.ProfileCPU(logger).Close()
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "Log"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{
@@ -71,5 +72,6 @@ func (cmd *Get) Execute(args []string) error {
 	// 	log.Fatalf("Get RPC failed: %v", err)
 	// }
 	// fmt.Println(resp)
+	cmd.ProfileMemory(logger)
 	return nil
 }

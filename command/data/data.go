@@ -1,8 +1,13 @@
 package data
 
-import "github.com/dihedron/rafter/cluster"
+import (
+	"github.com/dihedron/rafter/cluster"
+	"github.com/dihedron/rafter/command/base"
+)
 
 type Base struct {
+	base.Base
+
 	Peers []cluster.Peer `short:"p" long:"peer" description:"The address of a peer node in the cluster to join" required:"yes"`
 }
 
