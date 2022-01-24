@@ -59,7 +59,7 @@ func (cmd *Run) Execute(args []string) error {
 	return nil
 }
 
-func (cmd *Run) NewRaft(ctx context.Context, myID, myAddress string, fsm raft.FSM) (*raft.Raft, *transport.Manager, error) {
+func (cmd *Run) NewRaft2(ctx context.Context, myID, myAddress string, fsm raft.FSM) (*raft.Raft, *transport.Manager, error) {
 	c := raft.DefaultConfig()
 	c.LocalID = raft.ServerID(myID)
 
