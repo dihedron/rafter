@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"regexp"
 	"sync"
-	"time"
 
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
@@ -24,7 +23,6 @@ func New(l logging.Logger) *Cache {
 // Cache keeps track of the three longest words it ever saw.
 type Cache struct {
 	mtx    sync.RWMutex
-	words  [3]string
 	cache  map[string]string
 	logger logging.Logger
 }
@@ -34,7 +32,6 @@ var _ raft.FSM = &Cache{}
 func (c *Cache) Apply(l *raft.Log) interface{} {
 	var err error
 	// c.logger.Debug("log entry (type %T): %s", l, logging.ToJSON(l))
-	time.Sleep(50 * time.Millisecond)
 	message := &Message{}
 	if err = json.Unmarshal(l.Data, message); err != nil {
 		c.logger.Error("error unmarshalling message: %v", err)
@@ -106,16 +103,6 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 		return nil
 	}
 	return data
-
-	// w := string(l.Data)
-	// for i := 0; i < len(c.words); i++ {
-	// 	if compareWords(w, c.words[i]) {
-	// 		copy(c.words[i+1:], c.words[i:])
-	// 		c.words[i] = w
-	// 		break
-	// 	}
-	// }
-	// return nil
 }
 
 func (c *Cache) Snapshot() (raft.FSMSnapshot, error) {
