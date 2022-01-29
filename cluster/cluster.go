@@ -123,7 +123,7 @@ func (c *Cluster) StartRPCServer() error {
 	c.logger.Info("TCP address %s available", c.address.String())
 	// start the gRPC server
 	c.server = grpc.NewServer()
-	pb.RegisterStateServer(c.server, application.NewRPCInterface(c.state, c.raft, c.logger))
+	pb.RegisterContextServer(c.server, application.NewRPCInterface(c.state, c.raft, c.logger))
 	c.transport.Register(c.server)
 	leaderhealth.Setup(c.raft, c.server, []string{"Log"})
 	raftadmin.Register(c.server, c.raft)

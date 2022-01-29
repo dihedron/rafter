@@ -46,7 +46,7 @@ func (cmd *Set) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewStateClient(conn)
+	c := pb.NewContextClient(conn)
 	response, err := c.Set(context.Background(), &pb.SetRequest{Key: cmd.Key, Value: []byte(cmd.Value)})
 	if err != nil {
 		log.Fatalf("Set RPC failed: %v", err)

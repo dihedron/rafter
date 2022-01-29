@@ -3,7 +3,7 @@ package rafter;
 
 option go_package = "github.com/dihedron/rafter/proto";
 
-service State {
+service Context {
 	rpc Set(SetRequest) returns (SetResponse) {}
 	rpc Get(GetRequest) returns (GetResponse) {}
 	rpc Remove(RemoveRequest) returns (RemoveResponse) {}

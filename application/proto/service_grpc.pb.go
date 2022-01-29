@@ -18,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// StateClient is the client API for State service.
+// ContextClient is the client API for Context service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type StateClient interface {
+type ContextClient interface {
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Remove(ctx context.Context, in *RemoveRequest, opts ...grpc.CallOption) (*RemoveResponse, error)
@@ -29,219 +29,219 @@ type StateClient interface {
 	Clear(ctx context.Context, in *ClearRequest, opts ...grpc.CallOption) (*ClearResponse, error)
 }
 
-type stateClient struct {
+type contextClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewStateClient(cc grpc.ClientConnInterface) StateClient {
-	return &stateClient{cc}
+func NewContextClient(cc grpc.ClientConnInterface) ContextClient {
+	return &contextClient{cc}
 }
 
-func (c *stateClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
+func (c *contextClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
 	out := new(SetResponse)
-	err := c.cc.Invoke(ctx, "/rafter.State/Set", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rafter.Context/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stateClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+func (c *contextClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, "/rafter.State/Get", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rafter.Context/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stateClient) Remove(ctx context.Context, in *RemoveRequest, opts ...grpc.CallOption) (*RemoveResponse, error) {
+func (c *contextClient) Remove(ctx context.Context, in *RemoveRequest, opts ...grpc.CallOption) (*RemoveResponse, error) {
 	out := new(RemoveResponse)
-	err := c.cc.Invoke(ctx, "/rafter.State/Remove", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rafter.Context/Remove", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stateClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
+func (c *contextClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
 	out := new(ListResponse)
-	err := c.cc.Invoke(ctx, "/rafter.State/List", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rafter.Context/List", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stateClient) Clear(ctx context.Context, in *ClearRequest, opts ...grpc.CallOption) (*ClearResponse, error) {
+func (c *contextClient) Clear(ctx context.Context, in *ClearRequest, opts ...grpc.CallOption) (*ClearResponse, error) {
 	out := new(ClearResponse)
-	err := c.cc.Invoke(ctx, "/rafter.State/Clear", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rafter.Context/Clear", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// StateServer is the server API for State service.
-// All implementations must embed UnimplementedStateServer
+// ContextServer is the server API for Context service.
+// All implementations must embed UnimplementedContextServer
 // for forward compatibility
-type StateServer interface {
+type ContextServer interface {
 	Set(context.Context, *SetRequest) (*SetResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	Remove(context.Context, *RemoveRequest) (*RemoveResponse, error)
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	Clear(context.Context, *ClearRequest) (*ClearResponse, error)
-	mustEmbedUnimplementedStateServer()
+	mustEmbedUnimplementedContextServer()
 }
 
-// UnimplementedStateServer must be embedded to have forward compatible implementations.
-type UnimplementedStateServer struct {
+// UnimplementedContextServer must be embedded to have forward compatible implementations.
+type UnimplementedContextServer struct {
 }
 
-func (UnimplementedStateServer) Set(context.Context, *SetRequest) (*SetResponse, error) {
+func (UnimplementedContextServer) Set(context.Context, *SetRequest) (*SetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
-func (UnimplementedStateServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
+func (UnimplementedContextServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedStateServer) Remove(context.Context, *RemoveRequest) (*RemoveResponse, error) {
+func (UnimplementedContextServer) Remove(context.Context, *RemoveRequest) (*RemoveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Remove not implemented")
 }
-func (UnimplementedStateServer) List(context.Context, *ListRequest) (*ListResponse, error) {
+func (UnimplementedContextServer) List(context.Context, *ListRequest) (*ListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedStateServer) Clear(context.Context, *ClearRequest) (*ClearResponse, error) {
+func (UnimplementedContextServer) Clear(context.Context, *ClearRequest) (*ClearResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Clear not implemented")
 }
-func (UnimplementedStateServer) mustEmbedUnimplementedStateServer() {}
+func (UnimplementedContextServer) mustEmbedUnimplementedContextServer() {}
 
-// UnsafeStateServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to StateServer will
+// UnsafeContextServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ContextServer will
 // result in compilation errors.
-type UnsafeStateServer interface {
-	mustEmbedUnimplementedStateServer()
+type UnsafeContextServer interface {
+	mustEmbedUnimplementedContextServer()
 }
 
-func RegisterStateServer(s grpc.ServiceRegistrar, srv StateServer) {
-	s.RegisterService(&State_ServiceDesc, srv)
+func RegisterContextServer(s grpc.ServiceRegistrar, srv ContextServer) {
+	s.RegisterService(&Context_ServiceDesc, srv)
 }
 
-func _State_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Context_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StateServer).Set(ctx, in)
+		return srv.(ContextServer).Set(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/rafter.State/Set",
+		FullMethod: "/rafter.Context/Set",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StateServer).Set(ctx, req.(*SetRequest))
+		return srv.(ContextServer).Set(ctx, req.(*SetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _State_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Context_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StateServer).Get(ctx, in)
+		return srv.(ContextServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/rafter.State/Get",
+		FullMethod: "/rafter.Context/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StateServer).Get(ctx, req.(*GetRequest))
+		return srv.(ContextServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _State_Remove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Context_Remove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StateServer).Remove(ctx, in)
+		return srv.(ContextServer).Remove(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/rafter.State/Remove",
+		FullMethod: "/rafter.Context/Remove",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StateServer).Remove(ctx, req.(*RemoveRequest))
+		return srv.(ContextServer).Remove(ctx, req.(*RemoveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _State_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Context_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StateServer).List(ctx, in)
+		return srv.(ContextServer).List(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/rafter.State/List",
+		FullMethod: "/rafter.Context/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StateServer).List(ctx, req.(*ListRequest))
+		return srv.(ContextServer).List(ctx, req.(*ListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _State_Clear_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Context_Clear_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ClearRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StateServer).Clear(ctx, in)
+		return srv.(ContextServer).Clear(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/rafter.State/Clear",
+		FullMethod: "/rafter.Context/Clear",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StateServer).Clear(ctx, req.(*ClearRequest))
+		return srv.(ContextServer).Clear(ctx, req.(*ClearRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// State_ServiceDesc is the grpc.ServiceDesc for State service.
+// Context_ServiceDesc is the grpc.ServiceDesc for Context service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var State_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "rafter.State",
-	HandlerType: (*StateServer)(nil),
+var Context_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "rafter.Context",
+	HandlerType: (*ContextServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Set",
-			Handler:    _State_Set_Handler,
+			Handler:    _Context_Set_Handler,
 		},
 		{
 			MethodName: "Get",
-			Handler:    _State_Get_Handler,
+			Handler:    _Context_Get_Handler,
 		},
 		{
 			MethodName: "Remove",
-			Handler:    _State_Remove_Handler,
+			Handler:    _Context_Remove_Handler,
 		},
 		{
 			MethodName: "List",
-			Handler:    _State_List_Handler,
+			Handler:    _Context_List_Handler,
 		},
 		{
 			MethodName: "Clear",
-			Handler:    _State_Clear_Handler,
+			Handler:    _Context_Clear_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

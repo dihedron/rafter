@@ -14,7 +14,7 @@ import (
 )
 
 type RPCInterface struct {
-	proto.UnimplementedStateServer
+	proto.UnimplementedContextServer
 	cache  *Cache
 	raft   *raft.Raft
 	logger logging.Logger

@@ -54,7 +54,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewStateClient(conn)
+	c := pb.NewContextClient(conn)
 
 	ch := generateWords(cmd.Iterations, cmd.Length)
 
