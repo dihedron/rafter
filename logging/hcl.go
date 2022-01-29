@@ -18,28 +18,38 @@ func NewHCLLogger(logger hclog.Logger) *HCLLogger {
 }
 
 func (l *HCLLogger) Trace(msg string, args ...interface{}) {
-	message := l.format(msg, args...)
-	l.logger.Trace(message)
+	if GetLevel() <= LevelTrace {
+		message := l.format(msg, args...)
+		l.logger.Trace(message)
+	}
 }
 
 func (l *HCLLogger) Debug(msg string, args ...interface{}) {
-	message := l.format(msg, args...)
-	l.logger.Debug(message)
+	if GetLevel() <= LevelDebug {
+		message := l.format(msg, args...)
+		l.logger.Debug(message)
+	}
 }
 
 func (l *HCLLogger) Info(msg string, args ...interface{}) {
-	message := l.format(msg, args...)
-	l.logger.Info(message)
+	if GetLevel() <= LevelInfo {
+		message := l.format(msg, args...)
+		l.logger.Info(message)
+	}
 }
 
 func (l *HCLLogger) Warn(msg string, args ...interface{}) {
-	message := l.format(msg, args...)
-	l.logger.Warn(message)
+	if GetLevel() <= LevelWarn {
+		message := l.format(msg, args...)
+		l.logger.Warn(message)
+	}
 }
 
 func (l *HCLLogger) Error(msg string, args ...interface{}) {
-	message := l.format(msg, args...)
-	l.logger.Error(message)
+	if GetLevel() <= LevelError {
+		message := l.format(msg, args...)
+		l.logger.Error(message)
+	}
 }
 
 func (l *HCLLogger) format(msg string, args ...interface{}) string {

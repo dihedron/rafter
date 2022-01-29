@@ -10,6 +10,10 @@ const (
 	Clear
 )
 
+func (t Type) String() string {
+	return []string{"GET", "SET", "DEL", "LST", "CLR"}[t]
+}
+
 type Message struct {
 	Type   Type     `json:"type"`
 	Key    string   `json:"key,omitempty"`

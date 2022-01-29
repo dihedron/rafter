@@ -23,42 +23,52 @@ func NewStreamLogger(stream *os.File) *StreamLogger {
 }
 
 func (l *StreamLogger) Trace(msg string, args ...interface{}) {
-	if isatty.IsTerminal(l.stream.Fd()) {
-		l.write(color.HiWhiteString("TRC"), msg, args...)
-	} else {
-		l.write("TRC", msg, args...)
+	if GetLevel() <= LevelTrace {
+		if isatty.IsTerminal(l.stream.Fd()) {
+			l.write(color.HiWhiteString("TRC"), msg, args...)
+		} else {
+			l.write("TRC", msg, args...)
+		}
 	}
 }
 
 func (l *StreamLogger) Debug(msg string, args ...interface{}) {
-	if isatty.IsTerminal(l.stream.Fd()) {
-		l.write(color.HiBlueString("DBG"), msg, args...)
-	} else {
-		l.write("DBG", msg, args...)
+	if GetLevel() <= LevelDebug {
+		if isatty.IsTerminal(l.stream.Fd()) {
+			l.write(color.HiBlueString("DBG"), msg, args...)
+		} else {
+			l.write("DBG", msg, args...)
+		}
 	}
 }
 
 func (l *StreamLogger) Info(msg string, args ...interface{}) {
-	if isatty.IsTerminal(l.stream.Fd()) {
-		l.write(color.HiGreenString("INF"), msg, args...)
-	} else {
-		l.write("INF", msg, args...)
+	if GetLevel() <= LevelInfo {
+		if isatty.IsTerminal(l.stream.Fd()) {
+			l.write(color.HiGreenString("INF"), msg, args...)
+		} else {
+			l.write("INF", msg, args...)
+		}
 	}
 }
 
 func (l *StreamLogger) Warn(msg string, args ...interface{}) {
-	if isatty.IsTerminal(l.stream.Fd()) {
-		l.write(color.HiYellowString("WRN"), msg, args...)
-	} else {
-		l.write("WRN", msg, args...)
+	if GetLevel() <= LevelWarn {
+		if isatty.IsTerminal(l.stream.Fd()) {
+			l.write(color.HiYellowString("WRN"), msg, args...)
+		} else {
+			l.write("WRN", msg, args...)
+		}
 	}
 }
 
 func (l *StreamLogger) Error(msg string, args ...interface{}) {
-	if isatty.IsTerminal(l.stream.Fd()) {
-		l.write(color.HiRedString("ERR"), msg, args...)
-	} else {
-		l.write("ERR", msg, args...)
+	if GetLevel() <= LevelError {
+		if isatty.IsTerminal(l.stream.Fd()) {
+			l.write(color.HiRedString("ERR"), msg, args...)
+		} else {
+			l.write("ERR", msg, args...)
+		}
 	}
 }
 

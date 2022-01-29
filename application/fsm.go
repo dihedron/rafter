@@ -31,7 +31,7 @@ var _ raft.FSM = &Cache{}
 
 func (c *Cache) Apply(l *raft.Log) interface{} {
 	var err error
-	// c.logger.Debug("log entry (type %T): %s", l, logging.ToJSON(l))
+	c.logger.Trace("applying log entry: %s", logging.ToJSON(l))
 	message := &Message{}
 	if err = json.Unmarshal(l.Data, message); err != nil {
 		c.logger.Error("error unmarshalling message: %v", err)

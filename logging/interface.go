@@ -1,5 +1,34 @@
 package logging
 
+import "sync"
+
+type Level uint8
+
+const (
+	LevelTrace Level = iota
+	LevelDebug
+	LevelInfo
+	LevelWarn
+	LevelError
+)
+
+var (
+	lock    sync.RWMutex
+	current Level = LevelInfo
+)
+
+func SetLevel(new Level) {
+	lock.Lock()
+	defer lock.Unlock()
+	current = new
+}
+
+func GetLevel() Level {
+	lock.RLock()
+	defer lock.RUnlock()
+	return current
+}
+
 type Logger interface {
 	// Trace emits a message at the TRACE level.
 	Trace(format string, args ...interface{})

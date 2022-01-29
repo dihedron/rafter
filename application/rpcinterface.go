@@ -34,7 +34,7 @@ func (r RPCInterface) Get(ctx context.Context, request *proto.GetRequest) (*prot
 		Key:  request.Key,
 	}
 
-	r.logger.Info("message received: %s", logging.ToJSON(message))
+	r.logger.Debug("message received: %s", logging.ToJSON(message))
 	data, err := json.Marshal(message)
 	if err != nil {
 		r.logger.Error("error marshalling Get message to JSON: %v", err)
@@ -77,6 +77,7 @@ func (r RPCInterface) Set(ctx context.Context, request *proto.SetRequest) (*prot
 		Key:   request.Key,
 		Value: request.Value,
 	}
+	r.logger.Debug("message received: %s", logging.ToJSON(message))
 	data, err := json.Marshal(message)
 	if err != nil {
 		r.logger.Error("error marshalling Set message to JSON: %v", err)
@@ -114,6 +115,7 @@ func (r RPCInterface) Remove(ctx context.Context, request *proto.RemoveRequest) 
 		Type: Remove,
 		Key:  request.Key,
 	}
+	r.logger.Debug("message received: %s", logging.ToJSON(message))
 	data, err := json.Marshal(message)
 	if err != nil {
 		r.logger.Error("error marshalling Remove message to JSON: %v", err)
@@ -159,6 +161,7 @@ func (r RPCInterface) List(ctx context.Context, request *proto.ListRequest) (*pr
 		Type:   List,
 		Filter: request.Filter,
 	}
+	r.logger.Debug("message received: %s", logging.ToJSON(message))
 	data, err := json.Marshal(message)
 	if err != nil {
 		r.logger.Error("error marshalling List message to JSON: %v", err)
@@ -197,6 +200,7 @@ func (r RPCInterface) Clear(ctx context.Context, request *proto.ClearRequest) (*
 		Type:   Clear,
 		Filter: request.Filter,
 	}
+	r.logger.Debug("message received: %s", logging.ToJSON(message))
 	data, err := json.Marshal(message)
 	if err != nil {
 		r.logger.Error("error marshalling Clear message to JSON: %v", err)
@@ -228,32 +232,3 @@ func (r RPCInterface) Clear(ctx context.Context, request *proto.ClearRequest) (*
 
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
-
-// func (r RPCInterface) AddWord(ctx context.Context, req *proto.AddWordRequest) (*proto.AddWordResponse, error) {
-// 	f := r.raft.Apply([]byte(req.GetWord()), time.Second)
-// 	if err := f.Error(); err != nil {
-// 		return nil, rafterrors.MarkRetriable(err)
-// 	}
-// 	return &proto.AddWordResponse{
-// 		CommitIndex: f.Index(),
-// 	}, nil
-// }
-
-// func (r RPCInterface) GetWords(ctx context.Context, req *proto.GetWordsRequest) (*proto.GetWordsResponse, error) {
-// 	r.wordTracker.mtx.RLock()
-// 	defer r.wordTracker.mtx.RUnlock()
-// 	return &proto.GetWordsResponse{
-// 		BestWords:   cloneWords(r.wordTracker.words),
-// 		ReadAtIndex: r.raft.AppliedIndex(),
-// 	}, nil
-// }
-
-// func (r RPCInterface) Set(ctx context.Context, req *proto.SetRequest) (*proto.SetResponse, error) {
-// 	f := r.raft.Apply([]byte(req.Set()), time.Second)
-// 	if err := f.Error(); err != nil {
-// 		return nil, rafterrors.MarkRetriable(err)
-// 	}
-// 	return &proto.AddWordResponse{
-// 		CommitIndex: f.Index(),
-// 	}, nil
-// }
