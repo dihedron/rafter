@@ -13,7 +13,7 @@ const (
 type Message struct {
 	Type   Type     `json:"type"`
 	Key    string   `json:"key,omitempty"`
-	Value  string   `json:"value,omitempty"`
+	Value  []byte   `json:"value,omitempty"`
 	Filter string   `json:"filter,omitempty"`
 	Keys   []string `json:"keys,omitempty"`
 	Index  uint64   `json:"index,omitempty"`

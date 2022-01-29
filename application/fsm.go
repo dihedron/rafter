@@ -15,7 +15,7 @@ import (
 func New(l logging.Logger) *Cache {
 	l.Info("creating store...")
 	return &Cache{
-		cache:  map[string]string{},
+		cache:  map[string][]byte{},
 		logger: l,
 	}
 }
@@ -23,7 +23,7 @@ func New(l logging.Logger) *Cache {
 // Cache keeps track of the three longest words it ever saw.
 type Cache struct {
 	mtx    sync.RWMutex
-	cache  map[string]string
+	cache  map[string][]byte
 	logger logging.Logger
 }
 
@@ -45,7 +45,7 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 		c.mtx.RUnlock()
 		result = &Message{
 			Key:   message.Key,
-			Value: value,
+			Value: []byte(value),
 			Index: l.Index,
 		}
 	case Set:
@@ -119,7 +119,7 @@ func (c *Cache) Restore(r io.ReadCloser) error {
 	if err != nil {
 		return err
 	}
-	cache := map[string]string{}
+	cache := map[string][]byte{}
 	if err := json.Unmarshal(data, &cache); err != nil {
 		return fmt.Errorf("error unmarshalling snapshot content from JSON: %w", err)
 	}

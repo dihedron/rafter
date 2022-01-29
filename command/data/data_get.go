@@ -45,33 +45,13 @@ func (cmd *Get) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewLogClient(conn)
+	c := pb.NewStateClient(conn)
 	response, err := c.Get(context.Background(), &pb.GetRequest{Key: cmd.Key})
 	if err != nil {
 		log.Fatalf("Set RPC failed: %v", err)
 		return err
 	}
 	fmt.Printf("key '%s' has value '%s' (index: %d)\n", response.Key, response.Value, response.Index)
-
-	// var wg sync.WaitGroup
-	// for i := 0; 10 > i; i++ {
-	// 	wg.Add(1)
-	// 	go func() {
-	// 		defer wg.Done()
-	// 		for w := range ch {
-	// 			_, err := c.Set(context.Background(), &pb.SetRequest{Key: "key", Value: w})
-	// 			if err != nil {
-	// 				log.Fatalf("Set RPC failed: %v", err)
-	// 			}
-	// 		}
-	// 	}()
-	// }
-	// wg.Wait()
-	// resp, err := c.Get(context.Background(), &pb.GetRequest{Key: "key"})
-	// if err != nil {
-	// 	log.Fatalf("Get RPC failed: %v", err)
-	// }
-	// fmt.Println(resp)
 	cmd.ProfileMemory(logger)
 	return nil
 }

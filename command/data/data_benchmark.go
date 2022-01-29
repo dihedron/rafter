@@ -54,7 +54,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewLogClient(conn)
+	c := pb.NewStateClient(conn)
 
 	ch := generateWords(cmd.Iterations, cmd.Length)
 
@@ -67,7 +67,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 			ts := []time.Duration{}
 			for w := range ch {
 				start := time.Now()
-				_, err := c.Set(context.Background(), &pb.SetRequest{Key: cmd.Key, Value: w})
+				_, err := c.Set(context.Background(), &pb.SetRequest{Key: cmd.Key, Value: []byte(w)})
 				elapsed := time.Since(start)
 				ts = append(ts, elapsed)
 				if err != nil {

@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
-	pb "github.com/dihedron/rafter/application/proto"
+	proto "github.com/dihedron/rafter/application/proto"
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
 )
 
 type RPCInterface struct {
-	pb.UnimplementedLogServer
+	proto.UnimplementedStateServer
 	cache  *Cache
 	raft   *raft.Raft
 	logger logging.Logger
@@ -28,7 +28,7 @@ func NewRPCInterface(c *Cache, r *raft.Raft, l logging.Logger) *RPCInterface {
 	}
 }
 
-func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetResponse, error) {
+func (r RPCInterface) Get(ctx context.Context, request *proto.GetRequest) (*proto.GetResponse, error) {
 	message := &Message{
 		Type: Get,
 		Key:  request.Key,
@@ -60,7 +60,7 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 				r.logger.Error("error unmarshalling response to Get message from cluster: %v", err)
 				return nil, rafterrors.MarkRetriable(err)
 			}
-			return &pb.GetResponse{
+			return &proto.GetResponse{
 				Key:   request.Key,
 				Value: message.Value,
 				Index: f.Index(),
@@ -71,7 +71,7 @@ func (r RPCInterface) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetR
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
-func (r RPCInterface) Set(ctx context.Context, request *pb.SetRequest) (*pb.SetResponse, error) {
+func (r RPCInterface) Set(ctx context.Context, request *proto.SetRequest) (*proto.SetResponse, error) {
 	message := &Message{
 		Type:  Set,
 		Key:   request.Key,
@@ -100,7 +100,7 @@ func (r RPCInterface) Set(ctx context.Context, request *pb.SetRequest) (*pb.SetR
 				r.logger.Error("error unmarshalling response to Set message from cluster: %v", err)
 				return nil, rafterrors.MarkRetriable(err)
 			}
-			return &pb.SetResponse{
+			return &proto.SetResponse{
 				Index: f.Index(),
 			}, nil
 		}
@@ -109,7 +109,7 @@ func (r RPCInterface) Set(ctx context.Context, request *pb.SetRequest) (*pb.SetR
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
-func (r RPCInterface) Remove(ctx context.Context, request *pb.RemoveRequest) (*pb.RemoveResponse, error) {
+func (r RPCInterface) Remove(ctx context.Context, request *proto.RemoveRequest) (*proto.RemoveResponse, error) {
 	message := &Message{
 		Type: Remove,
 		Key:  request.Key,
@@ -137,7 +137,7 @@ func (r RPCInterface) Remove(ctx context.Context, request *pb.RemoveRequest) (*p
 				r.logger.Error("error unmarshalling response to Remove message from cluster: %v", err)
 				return nil, rafterrors.MarkRetriable(err)
 			}
-			return &pb.RemoveResponse{
+			return &proto.RemoveResponse{
 				Key:   message.Key,
 				Value: message.Value,
 				Index: f.Index(),
@@ -148,7 +148,7 @@ func (r RPCInterface) Remove(ctx context.Context, request *pb.RemoveRequest) (*p
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
-func (r RPCInterface) List(ctx context.Context, request *pb.ListRequest) (*pb.ListResponse, error) {
+func (r RPCInterface) List(ctx context.Context, request *proto.ListRequest) (*proto.ListResponse, error) {
 	if request.Filter != "" {
 		// perform sanity check on regexp before sending to FSM
 		if _, err := regexp.Compile(request.Filter); err != nil {
@@ -182,7 +182,7 @@ func (r RPCInterface) List(ctx context.Context, request *pb.ListRequest) (*pb.Li
 				r.logger.Error("error unmarshalling response to List message from cluster: %v", err)
 				return nil, rafterrors.MarkRetriable(err)
 			}
-			return &pb.ListResponse{
+			return &proto.ListResponse{
 				Keys:  message.Keys,
 				Index: f.Index(),
 			}, nil
@@ -192,7 +192,7 @@ func (r RPCInterface) List(ctx context.Context, request *pb.ListRequest) (*pb.Li
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
-func (r RPCInterface) Clear(ctx context.Context, request *pb.ClearRequest) (*pb.ClearResponse, error) {
+func (r RPCInterface) Clear(ctx context.Context, request *proto.ClearRequest) (*proto.ClearResponse, error) {
 	message := &Message{
 		Type:   Clear,
 		Filter: request.Filter,
@@ -220,7 +220,7 @@ func (r RPCInterface) Clear(ctx context.Context, request *pb.ClearRequest) (*pb.
 				r.logger.Error("error unmarshalling response to Clear message from cluster: %v", err)
 				return nil, rafterrors.MarkRetriable(err)
 			}
-			return &pb.ClearResponse{
+			return &proto.ClearResponse{
 				Index: f.Index(),
 			}, nil
 		}
@@ -229,31 +229,31 @@ func (r RPCInterface) Clear(ctx context.Context, request *pb.ClearRequest) (*pb.
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
-// func (r RPCInterface) AddWord(ctx context.Context, req *pb.AddWordRequest) (*pb.AddWordResponse, error) {
+// func (r RPCInterface) AddWord(ctx context.Context, req *proto.AddWordRequest) (*proto.AddWordResponse, error) {
 // 	f := r.raft.Apply([]byte(req.GetWord()), time.Second)
 // 	if err := f.Error(); err != nil {
 // 		return nil, rafterrors.MarkRetriable(err)
 // 	}
-// 	return &pb.AddWordResponse{
+// 	return &proto.AddWordResponse{
 // 		CommitIndex: f.Index(),
 // 	}, nil
 // }
 
-// func (r RPCInterface) GetWords(ctx context.Context, req *pb.GetWordsRequest) (*pb.GetWordsResponse, error) {
+// func (r RPCInterface) GetWords(ctx context.Context, req *proto.GetWordsRequest) (*proto.GetWordsResponse, error) {
 // 	r.wordTracker.mtx.RLock()
 // 	defer r.wordTracker.mtx.RUnlock()
-// 	return &pb.GetWordsResponse{
+// 	return &proto.GetWordsResponse{
 // 		BestWords:   cloneWords(r.wordTracker.words),
 // 		ReadAtIndex: r.raft.AppliedIndex(),
 // 	}, nil
 // }
 
-// func (r RPCInterface) Set(ctx context.Context, req *pb.SetRequest) (*pb.SetResponse, error) {
+// func (r RPCInterface) Set(ctx context.Context, req *proto.SetRequest) (*proto.SetResponse, error) {
 // 	f := r.raft.Apply([]byte(req.Set()), time.Second)
 // 	if err := f.Error(); err != nil {
 // 		return nil, rafterrors.MarkRetriable(err)
 // 	}
-// 	return &pb.AddWordResponse{
+// 	return &proto.AddWordResponse{
 // 		CommitIndex: f.Index(),
 // 	}, nil
 // }

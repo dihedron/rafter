@@ -126,7 +126,7 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 	// 	log.Fatalf("failed to start raft: %v", err)
 	// }
 	c.server = grpc.NewServer()
-	pb.RegisterLogServer(c.server, application.NewRPCInterface(cache, c.raft, c.logger))
+	pb.RegisterStateServer(c.server, application.NewRPCInterface(cache, c.raft, c.logger))
 	c.transport.Register(c.server)
 	leaderhealth.Setup(c.raft, c.server, []string{"Log"})
 	raftadmin.Register(c.server, c.raft)

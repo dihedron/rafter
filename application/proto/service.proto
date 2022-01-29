@@ -3,9 +3,7 @@ package rafter;
 
 option go_package = "github.com/dihedron/rafter/proto";
 
-service Log {
-	// rpc AddWord(AddWordRequest) returns (AddWordResponse) {}
-	// rpc GetWords(GetWordsRequest) returns (GetWordsResponse) {}
+service State {
 	rpc Set(SetRequest) returns (SetResponse) {}
 	rpc Get(GetRequest) returns (GetResponse) {}
 	rpc Remove(RemoveRequest) returns (RemoveResponse) {}
@@ -15,7 +13,7 @@ service Log {
 
 message SetRequest {
 	string key = 1;
-	string value = 2;	
+	bytes value = 2;	
 }
 
 message SetResponse {
@@ -30,7 +28,7 @@ message GetRequest {
 message GetResponse{
 	uint64 index = 1;
 	string key = 2;
-	string value = 3;
+	bytes value = 3;
 	string error = 4;
 }
 
@@ -41,7 +39,7 @@ message RemoveRequest {
 message RemoveResponse{
 	uint64 index = 1;
 	string key = 2;
-	string value = 3;
+	bytes value = 3;
 	string error = 4;
 }
 
