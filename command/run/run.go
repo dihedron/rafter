@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 
 	transport "github.com/Jille/raft-grpc-transport"
-	"github.com/dihedron/rafter/application"
 	"github.com/dihedron/rafter/cluster"
 	"github.com/dihedron/rafter/command/base"
+	"github.com/dihedron/rafter/distributed"
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -40,7 +40,7 @@ func (cmd *Run) Execute(args []string) error {
 
 	defer cmd.ProfileCPU(logger).Close()
 
-	appl := application.New(logger)
+	appl := distributed.NewContext(logger)
 
 	c, err := cluster.New(
 		args[0],

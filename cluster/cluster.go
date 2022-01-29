@@ -12,8 +12,8 @@ import (
 	"github.com/Jille/raft-grpc-leader-rpc/leaderhealth"
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/Jille/raftadmin"
-	"github.com/dihedron/rafter/application"
-	pb "github.com/dihedron/rafter/application/proto"
+	"github.com/dihedron/rafter/distributed"
+	proto "github.com/dihedron/rafter/distributed/proto"
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -32,20 +32,20 @@ type Cluster struct {
 	address   Address
 	peers     []Peer
 	bootstrap bool
-	state     *application.Cache
+	context   *distributed.Context
 	raft      *raft.Raft
 	transport *transport.Manager
 	server    *grpc.Server
 	logger    logging.Logger
 }
 
-func New(id string, state *application.Cache, options ...Option) (*Cluster, error) {
+func New(id string, context *distributed.Context, options ...Option) (*Cluster, error) {
 
 	c := &Cluster{
-		id:     id,
-		peers:  []Peer{},
-		logger: &logging.NoOpLogger{},
-		state:  state,
+		id:      id,
+		peers:   []Peer{},
+		logger:  &logging.NoOpLogger{},
+		context: context,
 	}
 	for _, option := range options {
 		option(c)
@@ -76,7 +76,7 @@ func New(id string, state *application.Cache, options ...Option) (*Cluster, erro
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(c.id)
 	config.SnapshotThreshold = 64
-	c.raft, err = raft.NewRaft(config, c.state, boltDB, boltDB, snapshots, c.transport.Transport())
+	c.raft, err = raft.NewRaft(config, c.context, boltDB, boltDB, snapshots, c.transport.Transport())
 	if err != nil {
 		// TODO: logger.Error
 		return nil, fmt.Errorf("error cereating new Raft cluster: %w", err)
@@ -123,7 +123,7 @@ func (c *Cluster) StartRPCServer() error {
 	c.logger.Info("TCP address %s available", c.address.String())
 	// start the gRPC server
 	c.server = grpc.NewServer()
-	pb.RegisterContextServer(c.server, application.NewRPCInterface(c.state, c.raft, c.logger))
+	proto.RegisterContextServer(c.server, distributed.NewRPCInterface(c.context, c.raft, c.logger))
 	c.transport.Register(c.server)
 	leaderhealth.Setup(c.raft, c.server, []string{"Log"})
 	raftadmin.Register(c.server, c.raft)

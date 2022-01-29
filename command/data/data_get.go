@@ -8,7 +8,7 @@ import (
 	"time"
 
 	_ "github.com/dihedron/grpc-multi-resolver"
-	pb "github.com/dihedron/rafter/application/proto"
+	proto "github.com/dihedron/rafter/distributed/proto"
 	"github.com/dihedron/rafter/logging"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc"
@@ -45,8 +45,8 @@ func (cmd *Get) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewContextClient(conn)
-	response, err := c.Get(context.Background(), &pb.GetRequest{Key: cmd.Key})
+	c := proto.NewContextClient(conn)
+	response, err := c.Get(context.Background(), &proto.GetRequest{Key: cmd.Key})
 	if err != nil {
 		log.Fatalf("Set RPC failed: %v", err)
 		return err

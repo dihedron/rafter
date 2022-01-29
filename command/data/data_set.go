@@ -8,7 +8,7 @@ import (
 	"time"
 
 	_ "github.com/dihedron/grpc-multi-resolver"
-	pb "github.com/dihedron/rafter/application/proto"
+	proto "github.com/dihedron/rafter/distributed/proto"
 	"github.com/dihedron/rafter/logging"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc"
@@ -46,33 +46,13 @@ func (cmd *Set) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewContextClient(conn)
-	response, err := c.Set(context.Background(), &pb.SetRequest{Key: cmd.Key, Value: []byte(cmd.Value)})
+	c := proto.NewContextClient(conn)
+	response, err := c.Set(context.Background(), &proto.SetRequest{Key: cmd.Key, Value: []byte(cmd.Value)})
 	if err != nil {
 		log.Fatalf("Set RPC failed: %v", err)
 		return err
 	}
 	fmt.Printf("key '%s' set to '%s' (index: %d)\n", cmd.Key, cmd.Value, response.Index)
-
-	// var wg sync.WaitGroup
-	// for i := 0; 10 > i; i++ {
-	// 	wg.Add(1)
-	// 	go func() {
-	// 		defer wg.Done()
-	// 		for w := range ch {
-	// 			_, err := c.Set(context.Background(), &pb.SetRequest{Key: "key", Value: w})
-	// 			if err != nil {
-	// 				log.Fatalf("Set RPC failed: %v", err)
-	// 			}
-	// 		}
-	// 	}()
-	// }
-	// wg.Wait()
-	// resp, err := c.Get(context.Background(), &pb.GetRequest{Key: "key"})
-	// if err != nil {
-	// 	log.Fatalf("Get RPC failed: %v", err)
-	// }
-	// fmt.Println(resp)
 	cmd.ProfileMemory(logger)
 	return nil
 }

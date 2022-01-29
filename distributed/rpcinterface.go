@@ -1,4 +1,4 @@
-package application
+package distributed
 
 import (
 	"context"
@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/Jille/raft-grpc-leader-rpc/rafterrors"
-	proto "github.com/dihedron/rafter/application/proto"
+	proto "github.com/dihedron/rafter/distributed/proto"
 	"github.com/dihedron/rafter/logging"
 	"github.com/hashicorp/raft"
 )
 
 type RPCInterface struct {
 	proto.UnimplementedContextServer
-	cache  *Cache
+	cache  *Context
 	raft   *raft.Raft
 	logger logging.Logger
 }
 
-func NewRPCInterface(c *Cache, r *raft.Raft, l logging.Logger) *RPCInterface {
+func NewRPCInterface(c *Context, r *raft.Raft, l logging.Logger) *RPCInterface {
 	return &RPCInterface{
 		cache:  c,
 		raft:   r,

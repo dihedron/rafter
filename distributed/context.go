@@ -1,4 +1,4 @@
-package application
+package distributed
 
 import (
 	"encoding/json"
@@ -12,24 +12,24 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-func New(l logging.Logger) *Cache {
-	l.Info("creating store...")
-	return &Cache{
+func NewContext(l logging.Logger) *Context {
+	l.Info("creating new distributed context...")
+	return &Context{
 		cache:  map[string][]byte{},
 		logger: l,
 	}
 }
 
-// STate keeps track of the three longest words it ever saw.
-type Cache struct {
+// Context is a cluster-wide shared, distributed context.
+type Context struct {
 	mtx    sync.RWMutex
 	cache  map[string][]byte
 	logger logging.Logger
 }
 
-var _ raft.FSM = &Cache{}
+var _ raft.FSM = &Context{}
 
-func (c *Cache) Apply(l *raft.Log) interface{} {
+func (c *Context) Apply(l *raft.Log) interface{} {
 	var err error
 	c.logger.Trace("applying log entry: %s", logging.ToJSON(l))
 	message := &Message{}
@@ -105,7 +105,7 @@ func (c *Cache) Apply(l *raft.Log) interface{} {
 	return data
 }
 
-func (c *Cache) Snapshot() (raft.FSMSnapshot, error) {
+func (c *Context) Snapshot() (raft.FSMSnapshot, error) {
 	// Make sure that any future calls to f.Apply() don't change the snapshot.
 	data, err := json.Marshal(c.cache)
 	if err != nil {
@@ -114,7 +114,7 @@ func (c *Cache) Snapshot() (raft.FSMSnapshot, error) {
 	return &Snapshot{data: data}, nil
 }
 
-func (c *Cache) Restore(r io.ReadCloser) error {
+func (c *Context) Restore(r io.ReadCloser) error {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err

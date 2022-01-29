@@ -1,4 +1,4 @@
-package application
+package distributed
 
 type Type int8
 

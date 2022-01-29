@@ -9,8 +9,8 @@ import (
 	"time"
 
 	_ "github.com/dihedron/grpc-multi-resolver"
-	pb "github.com/dihedron/rafter/application/proto"
 	"github.com/dihedron/rafter/command/data/random"
+	proto "github.com/dihedron/rafter/distributed/proto"
 	"github.com/dihedron/rafter/logging"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/montanaflynn/stats"
@@ -54,7 +54,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewContextClient(conn)
+	c := proto.NewContextClient(conn)
 
 	ch := generateWords(cmd.Iterations, cmd.Length)
 
@@ -67,7 +67,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 			ts := []time.Duration{}
 			for w := range ch {
 				start := time.Now()
-				_, err := c.Set(context.Background(), &pb.SetRequest{Key: cmd.Key, Value: []byte(w)})
+				_, err := c.Set(context.Background(), &proto.SetRequest{Key: cmd.Key, Value: []byte(w)})
 				elapsed := time.Since(start)
 				ts = append(ts, elapsed)
 				if err != nil {
@@ -89,12 +89,12 @@ func (cmd *Benchmark) Execute(args []string) error {
 		}(i)
 	}
 	wg.Wait()
-	_, err = c.Get(context.Background(), &pb.GetRequest{Key: cmd.Key})
+	_, err = c.Get(context.Background(), &proto.GetRequest{Key: cmd.Key})
 	if err != nil {
 		logger.Error("Get RPC failed: %v", err)
 		os.Exit(1)
 	}
-	_, err = c.Remove(context.Background(), &pb.RemoveRequest{Key: cmd.Key})
+	_, err = c.Remove(context.Background(), &proto.RemoveRequest{Key: cmd.Key})
 	if err != nil {
 		logger.Error("Remove RPC failed: %v", err)
 		os.Exit(1)
