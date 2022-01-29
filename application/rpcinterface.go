@@ -46,9 +46,6 @@ func (r RPCInterface) Get(ctx context.Context, request *proto.GetRequest) (*prot
 		r.logger.Error("error applying Get message to cluster: %v", err)
 		return nil, rafterrors.MarkRetriable(err)
 	}
-
-	//r.logger.Info("apply successful, got %s", string(f.Response()))
-
 	if f.Response() != nil {
 		switch response := f.Response().(type) {
 		case error:
@@ -67,7 +64,6 @@ func (r RPCInterface) Get(ctx context.Context, request *proto.GetRequest) (*prot
 			}, nil
 		}
 	}
-
 	return nil, rafterrors.MarkRetriable(fmt.Errorf("nil response"))
 }
 
@@ -89,7 +85,6 @@ func (r RPCInterface) Set(ctx context.Context, request *proto.SetRequest) (*prot
 		r.logger.Error("error applying Set message to cluster: %v", err)
 		return nil, rafterrors.MarkRetriable(err)
 	}
-
 	if f.Response() != nil {
 		switch response := f.Response().(type) {
 		case error:
