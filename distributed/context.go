@@ -15,7 +15,7 @@ import (
 func NewContext(l logging.Logger) *Context {
 	l.Info("creating new distributed context...")
 	return &Context{
-		cache:  map[string][]byte{},
+		values: map[string][]byte{},
 		logger: l,
 	}
 }
@@ -23,7 +23,7 @@ func NewContext(l logging.Logger) *Context {
 // Context is a cluster-wide shared, distributed context.
 type Context struct {
 	mtx    sync.RWMutex
-	cache  map[string][]byte
+	values map[string][]byte
 	logger logging.Logger
 }
 
@@ -41,7 +41,7 @@ func (c *Context) Apply(l *raft.Log) interface{} {
 	switch message.Type {
 	case Get:
 		c.mtx.RLock()
-		value := c.cache[message.Key]
+		value := c.values[message.Key]
 		c.mtx.RUnlock()
 		result = &Message{
 			Key:   message.Key,
@@ -50,15 +50,15 @@ func (c *Context) Apply(l *raft.Log) interface{} {
 		}
 	case Set:
 		c.mtx.Lock()
-		c.cache[message.Key] = message.Value
+		c.values[message.Key] = message.Value
 		c.mtx.Unlock()
 		result = &Message{
 			Index: l.Index,
 		}
 	case Remove:
 		c.mtx.Lock()
-		value := c.cache[message.Key]
-		delete(c.cache, message.Key)
+		value := c.values[message.Key]
+		delete(c.values, message.Key)
 		c.mtx.Unlock()
 		result = &Message{
 			Key:   message.Key,
@@ -75,7 +75,7 @@ func (c *Context) Apply(l *raft.Log) interface{} {
 		}
 		c.mtx.RLock()
 		keys := []string{}
-		for k := range c.cache {
+		for k := range c.values {
 			if re == nil || re.Match([]byte(k)) {
 				keys = append(keys, k)
 			}
@@ -87,8 +87,8 @@ func (c *Context) Apply(l *raft.Log) interface{} {
 		}
 	case Clear:
 		c.mtx.Lock()
-		value := c.cache[message.Key]
-		c.cache[message.Key] = message.Value
+		value := c.values[message.Key]
+		c.values[message.Key] = message.Value
 		c.mtx.Unlock()
 		result = &Message{
 			Key:   message.Key,
@@ -107,7 +107,7 @@ func (c *Context) Apply(l *raft.Log) interface{} {
 
 func (c *Context) Snapshot() (raft.FSMSnapshot, error) {
 	// Make sure that any future calls to f.Apply() don't change the snapshot.
-	data, err := json.Marshal(c.cache)
+	data, err := json.Marshal(c.values)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling snapshot content to JSON: %w", err)
 	}
@@ -123,6 +123,6 @@ func (c *Context) Restore(r io.ReadCloser) error {
 	if err := json.Unmarshal(data, &cache); err != nil {
 		return fmt.Errorf("error unmarshalling snapshot content from JSON: %w", err)
 	}
-	c.cache = cache
+	c.values = cache
 	return nil
 }

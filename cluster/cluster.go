@@ -53,21 +53,21 @@ func New(id string, context *distributed.Context, options ...Option) (*Cluster, 
 
 	// initialise the Raft cluster
 	if err := os.MkdirAll(c.directory, 0700); err != nil {
-		// TODO: logger.Error
+		c.logger.Error("error creating raft base directory a '%s': %v", c.directory, err)
 		return nil, fmt.Errorf("error creating raft base directory '%s': %w", c.directory, err)
 	}
 
 	// create the snapshot store; this allows the Raft to truncate the log
 	snapshots, err := raft.NewFileSnapshotStore(c.directory, RetainSnapshotCount, os.Stderr)
 	if err != nil {
-		// TODO: logger.Error
+		c.logger.Error("error creating file snapshot store: %v", err)
 		return nil, fmt.Errorf("error creating file snapshot store: %w", err)
 	}
 
 	// create the BoltDB instance for both log store and stable store
 	boltDB, err := raftboltdb.NewBoltStore(filepath.Join(c.directory, "raft.db"))
 	if err != nil {
-		// TODO: logger.Error
+		c.logger.Error("error creating BoltDB store: %v", err)
 		return nil, fmt.Errorf("error creating new BoltDB store: %w", err)
 	}
 
@@ -78,8 +78,8 @@ func New(id string, context *distributed.Context, options ...Option) (*Cluster, 
 	config.SnapshotThreshold = 64
 	c.raft, err = raft.NewRaft(config, c.context, boltDB, boltDB, snapshots, c.transport.Transport())
 	if err != nil {
-		// TODO: logger.Error
-		return nil, fmt.Errorf("error cereating new Raft cluster: %w", err)
+		c.logger.Error("error creating new raft clutser: %v", err)
+		return nil, fmt.Errorf("error creating new Raft cluster: %w", err)
 	}
 
 	if c.bootstrap {
@@ -135,11 +135,15 @@ func (c *Cluster) StartRPCServer() error {
 	return nil
 }
 
+func (c *Cluster) StopRPCServer() {
+	c.server.GracefulStop()
+}
+
 const (
 	LeadershipPollInterval = time.Duration(500 * time.Millisecond)
 )
 
-func (c *Cluster) Test() {
+func (c *Cluster) Attach() {
 	// handle interrupts
 	interrupts := make(chan os.Signal, 1)
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/dihedron/rafter/cluster"
@@ -54,8 +55,21 @@ func (cmd *Run) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating new cluster: %w", err)
 	}
-	c.StartRPCServer()
-	//c.Test()
+
+	var wg sync.WaitGroup
+	go func() {
+		c.StartRPCServer()
+		wg.Done()
+	}()
+	wg.Add(1)
+
+	go func() {
+		c.Attach()
+		wg.Done()
+	}()
+	wg.Add(1)
+
+	wg.Wait()
 	cmd.ProfileMemory(logger)
 	return nil
 }
