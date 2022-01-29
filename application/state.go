@@ -20,7 +20,7 @@ func New(l logging.Logger) *Cache {
 	}
 }
 
-// Cache keeps track of the three longest words it ever saw.
+// STate keeps track of the three longest words it ever saw.
 type Cache struct {
 	mtx    sync.RWMutex
 	cache  map[string][]byte

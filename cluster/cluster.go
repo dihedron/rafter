@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -33,33 +32,24 @@ type Cluster struct {
 	address   Address
 	peers     []Peer
 	bootstrap bool
+	state     *application.Cache
 	raft      *raft.Raft
 	transport *transport.Manager
 	server    *grpc.Server
 	logger    logging.Logger
 }
 
-func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
+func New(id string, state *application.Cache, options ...Option) (*Cluster, error) {
 
 	c := &Cluster{
 		id:     id,
 		peers:  []Peer{},
 		logger: &logging.NoOpLogger{},
+		state:  state,
 	}
 	for _, option := range options {
 		option(c)
 	}
-
-	// check that we can listen on the given address
-	socket, err := net.Listen("tcp", c.address.String())
-	if err != nil {
-		c.logger.Error("failed to listen: %v", err)
-		return nil, fmt.Errorf("failed to listen on '%s': %w", c.address.String(), err)
-	}
-
-	c.logger.Info("TCP address %s available", c.address.String())
-
-	cache := application.New(c.logger)
 
 	// initialise the Raft cluster
 	if err := os.MkdirAll(c.directory, 0700); err != nil {
@@ -86,7 +76,7 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(c.id)
 	config.SnapshotThreshold = 64
-	c.raft, err = raft.NewRaft(config, fsm, boltDB, boltDB, snapshots, c.transport.Transport())
+	c.raft, err = raft.NewRaft(config, c.state, boltDB, boltDB, snapshots, c.transport.Transport())
 	if err != nil {
 		// TODO: logger.Error
 		return nil, fmt.Errorf("error cereating new Raft cluster: %w", err)
@@ -120,21 +110,29 @@ func New(id string, fsm raft.FSM, options ...Option) (*Cluster, error) {
 		}
 	}
 
-	// ctx := context.Background()
-	// r, tm, err := c.initRaft(ctx, id, c.address.String(), cache)
-	// if err != nil {
-	// 	log.Fatalf("failed to start raft: %v", err)
-	// }
+	return c, nil
+}
+
+func (c *Cluster) StartRPCServer() error {
+	// check that we can listen on the given address
+	socket, err := net.Listen("tcp", c.address.String())
+	if err != nil {
+		c.logger.Error("failed to listen: %v", err)
+		return fmt.Errorf("failed to listen on '%s': %w", c.address.String(), err)
+	}
+	c.logger.Info("TCP address %s available", c.address.String())
+	// start the gRPC server
 	c.server = grpc.NewServer()
-	pb.RegisterStateServer(c.server, application.NewRPCInterface(cache, c.raft, c.logger))
+	pb.RegisterStateServer(c.server, application.NewRPCInterface(c.state, c.raft, c.logger))
 	c.transport.Register(c.server)
 	leaderhealth.Setup(c.raft, c.server, []string{"Log"})
 	raftadmin.Register(c.server, c.raft)
 	reflection.Register(c.server)
 	if err := c.server.Serve(socket); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		c.logger.Error("failed to serve gRPC interface: %w")
+		return fmt.Errorf("error starting gRPC interface: %w", err)
 	}
-	return c, nil
+	return nil
 }
 
 const (

@@ -40,11 +40,11 @@ func (cmd *Run) Execute(args []string) error {
 
 	defer cmd.ProfileCPU(logger).Close()
 
-	fsm := application.New(logger)
+	appl := application.New(logger)
 
 	c, err := cluster.New(
 		args[0],
-		fsm,
+		appl,
 		cluster.WithDirectory(cmd.Directory),
 		cluster.WithNetAddress(cmd.Address.String()),
 		cluster.WithPeers(cmd.Peers...),
@@ -54,7 +54,8 @@ func (cmd *Run) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating new cluster: %w", err)
 	}
-	c.Test()
+	c.StartRPCServer()
+	//c.Test()
 	cmd.ProfileMemory(logger)
 	return nil
 }
