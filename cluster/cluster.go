@@ -1,12 +1,11 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/Jille/raft-grpc-leader-rpc/leaderhealth"
@@ -120,7 +119,7 @@ func (c *Cluster) StartRPCServer() error {
 		c.logger.Error("failed to listen: %v", err)
 		return fmt.Errorf("failed to listen on '%s': %w", c.address.String(), err)
 	}
-	c.logger.Info("TCP address %s available", c.address.String())
+	c.logger.Debug("TCP address %s available", c.address.String())
 	// start the gRPC server
 	c.server = grpc.NewServer()
 	proto.RegisterContextServer(c.server, distributed.NewRPCInterface(c.context, c.raft, c.logger))
@@ -128,104 +127,134 @@ func (c *Cluster) StartRPCServer() error {
 	leaderhealth.Setup(c.raft, c.server, []string{"Log"})
 	raftadmin.Register(c.server, c.raft)
 	reflection.Register(c.server)
-	if err := c.server.Serve(socket); err != nil {
-		c.logger.Error("failed to serve gRPC interface: %w")
-		return fmt.Errorf("error starting gRPC interface: %w", err)
-	}
+
+	c.logger.Info("starting gRPC server")
+
+	go func() error {
+		if err := c.server.Serve(socket); err != nil {
+			c.logger.Error("failed to serve gRPC interface: %w")
+			return fmt.Errorf("error starting gRPC interface: %w", err)
+		}
+		return nil
+	}()
 	return nil
 }
 
 func (c *Cluster) StopRPCServer() {
+	c.logger.Info("stopping gRPC server")
 	c.server.GracefulStop()
 }
+
+type NodeState uint8
+
+const (
+	Initial NodeState = iota
+	Leader
+	Follower
+	Exiting
+)
 
 const (
 	LeadershipPollInterval = time.Duration(500 * time.Millisecond)
 )
 
-func (c *Cluster) Attach() {
-	// handle interrupts
-	interrupts := make(chan os.Signal, 1)
-	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
-	defer close(interrupts)
+func (c *Cluster) MonitorClusterEvents(ctx context.Context) <-chan NodeState {
 
-	// start a ticker so that we're woken up every X milliseconds, regardless
-	ticker := time.NewTicker(LeadershipPollInterval)
-	c.logger.Debug("background checker started ticking every %+v ms", LeadershipPollInterval)
-	defer ticker.Stop()
+	events := make(chan NodeState, 1)
 
-	// open the channel to get leader elections
-	elections := c.raft.LeaderCh()
+	go func(ctx context.Context, events chan<- NodeState) {
 
-	// also register for cluster-related observations
-	observations := make(chan raft.Observation, 1)
-	observer := raft.NewObserver(observations, true, nil)
-	c.raft.RegisterObserver(observer)
+		// start a ticker so that we're woken up every X milliseconds, regardless
+		ticker := time.NewTicker(LeadershipPollInterval)
+		c.logger.Debug("background checker started ticking every %+v ms", LeadershipPollInterval)
+		defer ticker.Stop()
 
-	// leader := false
+		// open the channel to get leader elections
+		elections := c.raft.LeaderCh()
 
-	// at the very beginning, only the leader receives a ledership election
-	// notification via the elections channel; the followers know nothing
-	// about their state so they have to resort to checking the state from
-	// the Raft cluster; starting up the cluster takes some time: from the
-	// logs we see that while the leader knows it is the leader immediately
-	// via the Raft.LeaderCh() channel, the followers only know that a
-	// new leader is being elected via the observer events because they are
-	// requested to vote for a candidate; after the leader has been elected, it
-	// takes a while for the followers to get up to date: they have to apply
-	// all the outstanding log entries to their current state before starting
-	// to receive new entries and this usually takes a few seconds (depending
-	// on how old the snapshot is); this initial loop is only needed to check
-	// whether we're leaders of followers, therefore we'll be spending very
-	// little time inside of it; after having bootstrapped the cluster, leader
-	// elections, demotions and changes will flow into the leader and follower
-	// loops and will be handled there
-	// election_loop:
-	for {
-		select {
-		case election := <-elections:
-			c.logger.Info("cluster leadership changed (leader: %t)", election)
-			// leader = election
-			// break election_loop
-		case observation := <-observations:
-			c.logger.Debug("received observation: %T", observation.Data)
-			switch observation := observation.Data.(type) {
-			case raft.PeerObservation:
-				c.logger.Debug("received peer observation (id: %s, address: %s)", observation.Peer.ID, observation.Peer.Address)
-			case raft.LeaderObservation:
-				c.logger.Debug("received leader observation (leader: %s)", observation.Leader)
-			case raft.RequestVoteRequest:
-				c.logger.Debug("received request vote request observation (leadership transfer: %t, term: %d)", observation.LeadershipTransfer, observation.Term)
-			case raft.RaftState:
-				c.logger.Debug("received raft state observation: %s", observation)
-			default:
-				c.logger.Warn("unhandled observation type: %T", observation)
-			}
-		case interrupt := <-interrupts:
-			c.logger.Info("received interrupt: %d", interrupt)
-			os.Exit(1)
-		case <-ticker.C:
-			switch c.raft.State() {
-			case raft.Leader:
-				c.logger.Info("this node is the leader")
-				// leader = true
-				// break election_loop
-			case raft.Follower:
-				c.logger.Info("this node is a follower")
-				// leader = false
-				// break election_loop
-			case raft.Candidate:
-				c.logger.Info("this node is a candidate")
-			case raft.Shutdown:
-				c.logger.Info("raft cluster is shut down")
+		// also register for cluster-related observations
+		observations := make(chan raft.Observation, 1)
+		observer := raft.NewObserver(observations, true, nil)
+		c.raft.RegisterObserver(observer)
+
+		state := Initial
+
+		// at the very beginning, only the leader receives a ledership election
+		// notification via the elections channel; the followers know nothing
+		// about their state so they have to resort to checking the state from
+		// the Raft cluster; starting up the cluster takes some time: from the
+		// logs we see that while the leader knows it is the leader immediately
+		// via the Raft.LeaderCh() channel, the followers only know that a
+		// new leader is being elected via the observer events because they are
+		// requested to vote for a candidate; after the leader has been elected, it
+		// takes a while for the followers to get up to date: they have to apply
+		// all the outstanding log entries to their current state before starting
+		// to receive new entries and this usually takes a few seconds (depending
+		// on how old the snapshot is); this initial loop is only needed to check
+		// whether we're leaders of followers, therefore we'll be spending very
+		// little time inside of it; after having bootstrapped the cluster, leader
+		// elections, demotions and changes will flow into the leader and follower
+		// loops and will be handled there
+	loop:
+		for {
+			select {
+			case <-ctx.Done():
+				c.logger.Info("context has been cancelled, closing down")
+				events <- Exiting
+				break loop
+			case elected := <-elections:
+				c.logger.Info("cluster leadership changed (leader: %t)", elected)
+				if state == Initial || (state == Follower && elected) || (state == Leader && !elected) {
+					if elected && c.raft.State() == raft.Leader {
+						c.logger.Info("I'm the new leader")
+						state = Leader
+						events <- Leader
+					} else if c.raft.State() == raft.Follower {
+						c.logger.Info("I'm a follower now")
+						state = Follower
+						events <- Follower
+					}
+				}
+			case observation := <-observations:
+				c.logger.Debug("received observation: %T", observation.Data)
+				switch observation := observation.Data.(type) {
+				case raft.PeerObservation:
+					c.logger.Debug("received peer observation (id: %s, address: %s)", observation.Peer.ID, observation.Peer.Address)
+				case raft.LeaderObservation:
+					c.logger.Info("received leader observation (leader: %s)", observation.Leader)
+				case raft.RequestVoteRequest:
+					c.logger.Debug("received request vote request observation (leadership transfer: %t, term: %d)", observation.LeadershipTransfer, observation.Term)
+				case raft.RaftState:
+					c.logger.Debug("received raft state observation: %s", observation)
+				default:
+					c.logger.Warn("unhandled observation type: %T", observation)
+				}
+			// case interrupt := <-interrupts:
+			// 	c.logger.Info("received interrupt: %d", interrupt)
+			// 	events <- Exit
+			// os.Exit(1)
+			case <-ticker.C:
+				switch c.raft.State() {
+				case raft.Leader:
+					if state != Leader {
+						c.logger.Info("this node has become the new leader")
+						state = Leader
+						events <- Leader
+					}
+				case raft.Follower:
+					if state != Follower {
+						c.logger.Info("this node has become a follower")
+						state = Follower
+						events <- Follower
+					}
+				case raft.Candidate:
+					c.logger.Debug("this node is a candidate")
+				case raft.Shutdown:
+					c.logger.Info("raft cluster is shutting down")
+					events <- Exiting
+				}
 			}
 		}
-	}
-	// fmt.Printf("leader: %t\n", leader)
-
-	// select {
-	// case <-interrupts:
-	// 	c.logger.Info("closing down...")
-	// 	os.Exit(1)
-	// }
+	}(ctx, events)
+	return events
 }

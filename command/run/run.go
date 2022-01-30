@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"sync"
+	"os/signal"
+	"syscall"
 
-	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/dihedron/rafter/cluster"
 	"github.com/dihedron/rafter/command/base"
 	"github.com/dihedron/rafter/distributed"
 	"github.com/dihedron/rafter/logging"
-	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
-	"google.golang.org/grpc"
 )
 
 type Run struct {
@@ -56,77 +52,86 @@ func (cmd *Run) Execute(args []string) error {
 		return fmt.Errorf("error creating new cluster: %w", err)
 	}
 
-	var wg sync.WaitGroup
-	go func() {
-		c.StartRPCServer()
-		wg.Done()
-	}()
-	wg.Add(1)
+	// start the gRPC server; it will be closed down
+	// when we send an interrupt and exit the process
+	c.StartRPCServer()
 
-	go func() {
-		c.Attach()
-		wg.Done()
-	}()
-	wg.Add(1)
+	interrupts, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	wg.Wait()
-	cmd.ProfileMemory(logger)
-	return nil
-}
+	events := c.MonitorClusterEvents(interrupts)
 
-func (cmd *Run) NewRaft2(ctx context.Context, myID, myAddress string, fsm raft.FSM) (*raft.Raft, *transport.Manager, error) {
-	c := raft.DefaultConfig()
-	c.LocalID = raft.ServerID(myID)
-
-	err := os.MkdirAll(cmd.Directory, 0700)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating raft base directory '%s': %w", cmd.Directory, err)
-	}
-
-	// create the snapshot store; this allows the Raft to truncate the log
-	snapshots, err := raft.NewFileSnapshotStore(cmd.Directory, 10, os.Stderr)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating file snapshot store: %w", err)
-	}
-
-	// create the BoltDB instance for both log store and stable store
-	boltDB, err := raftboltdb.NewBoltStore(filepath.Join(cmd.Directory, "raft.db"))
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating new Bolt store: %w", err)
-	}
-
-	tm := transport.New(raft.ServerAddress(myAddress), []grpc.DialOption{grpc.WithInsecure()})
-
-	r, err := raft.NewRaft(c, fsm, boltDB, boltDB, snapshots, tm.Transport())
-	if err != nil {
-		return nil, nil, fmt.Errorf("raft.NewRaft: %v", err)
-	}
-
-	if cmd.Bootstrap {
-		servers := []raft.Server{
-			{
-				ID:       raft.ServerID(myID),
-				Suffrage: raft.Voter,
-				Address:  tm.Transport().LocalAddr(),
-			},
-		}
-		if len(cmd.Peers) > 0 {
-			for _, peer := range cmd.Peers {
-				servers = append(servers, raft.Server{
-					ID:      raft.ServerID(peer.ID),
-					Address: raft.ServerAddress(peer.Address.String()),
-				})
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+		done   = make(chan bool, 1)
+	)
+loop:
+	for {
+		select {
+		case <-interrupts.Done():
+			logger.Info("outer context cancelled by interrupts: closing down")
+			if cancel != nil {
+				cancel()
+				cancel = nil
+				select {
+				case <-done:
+					logger.Debug("existing routine exited")
+				default:
+					logger.Debug("no routine waiting to exit")
+				}
+			}
+			// release the resources
+			stop()
+			// unless we exit, the process will stay up trying to
+			// contact the other Raft cluster peers
+			os.Exit(1)
+			break loop
+		case event := <-events:
+			switch event {
+			case cluster.Leader:
+				logger.Info("received notification: I'm the leader")
+				if cancel != nil {
+					cancel()
+					cancel = nil
+					select {
+					case <-done:
+						logger.Debug("existing routine exited")
+					}
+				}
+				logger.Info("starting the new leader routine")
+				ctx, cancel = context.WithCancel(interrupts)
+				go LeaderRoutine(ctx, logger, done)
+			case cluster.Follower:
+				logger.Info("received notification: I'm a follower")
+				if cancel != nil {
+					cancel()
+					cancel = nil
+					select {
+					case <-done:
+						logger.Debug("existing routine exited")
+					}
+				}
+				logger.Info("starting the new follower routine")
+				ctx, cancel = context.WithCancel(interrupts)
+				go FollowerRoutine(ctx, logger, done)
+			case cluster.Exiting:
+				logger.Info("received notification: cluster is closing down")
+				if cancel != nil {
+					cancel()
+					cancel = nil
+					select {
+					case <-done:
+						logger.Debug("existing routine exited")
+					default:
+						logger.Debug("no routine waiting to exit")
+					}
+				}
+				break loop
 			}
 		}
-		cluster := raft.Configuration{
-			Servers: servers,
-		}
-
-		f := r.BootstrapCluster(cluster)
-		if err := f.Error(); err != nil {
-			return nil, nil, fmt.Errorf("raft.Raft.BootstrapCluster: %v", err)
-		}
 	}
 
-	return r, tm, nil
+	cmd.ProfileMemory(logger)
+	return nil
 }

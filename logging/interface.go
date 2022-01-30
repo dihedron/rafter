@@ -14,7 +14,7 @@ const (
 
 var (
 	lock    sync.RWMutex
-	current Level = LevelTrace
+	current Level = LevelInfo
 )
 
 func SetLevel(new Level) {
