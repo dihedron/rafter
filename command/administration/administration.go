@@ -49,7 +49,7 @@ func (cmd *Administration) Execute(args []string) error {
 		return fmt.Errorf("no command provided, please choose one of: %s", strings.Join(commands, ", "))
 	}
 
-	req, m, err := GetMessageByName(args[0], args[1:])
+	request, m, err := GetMessageByName(args[0], args[1:])
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (cmd *Administration) Execute(args []string) error {
 		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
 		grpc_retry.WithMax(5),
 	}
-	conn, err := grpc.Dial(address,
+	connection, err := grpc.Dial(address,
 		grpc.WithDefaultServiceConfig(serviceConfig), grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
@@ -72,25 +72,25 @@ func (cmd *Administration) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer connection.Close()
 
-	log.Printf("Invoking %s(%s)", m.Name(), prototext.Format(req.Interface()))
-	resp := messageFromDescriptor(m.Output()).Interface()
-	if err := conn.Invoke(ctx, "/RaftAdmin/"+string(m.Name()), req.Interface(), resp); err != nil {
+	log.Printf("Invoking %s(%s)", m.Name(), prototext.Format(request.Interface()))
+	response := messageFromDescriptor(m.Output()).Interface()
+	if err := connection.Invoke(ctx, "/RaftAdmin/"+string(m.Name()), request.Interface(), response); err != nil {
 		return err
 	}
-	log.Printf("Response: %s", strings.TrimSpace(prototext.Format(resp)))
+	log.Printf("Response: %s", strings.TrimSpace(prototext.Format(response)))
 
 	// this method returned a future; we call Await() to get the result,
 	// and then Forget() to free up the memory of the server
-	if f, ok := resp.(*proto.Future); ok {
-		c := proto.NewRaftAdminClient(conn)
+	if f, ok := response.(*proto.Future); ok {
+		c := proto.NewRaftAdminClient(connection)
 		log.Printf("Invoking Await(%s)", strings.TrimRight(prototext.Format(f), "\n\r"))
-		resp, err := c.Await(ctx, f)
+		response, err := c.Await(ctx, f)
 		if err != nil {
 			return err
 		}
-		log.Printf("Response: %s", prototext.Format(resp))
+		log.Printf("Response: %s", prototext.Format(response))
 		if _, err := c.Forget(ctx, f); err != nil {
 			return err
 		}
