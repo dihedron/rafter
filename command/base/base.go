@@ -1,18 +1,21 @@
 package base
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/dihedron/rafter/logging"
+	"github.com/hashicorp/go-hclog"
 )
 
 type Base struct {
 	Debug      string `short:"D" long:"debug" description:"The debug level of the application." optional:"yes" choice:"off" choice:"debug" choice:"info" choice:"warn" choice:"error"`
 	CPUProfile string `short:"C" long:"cpu-profile" description:"The (optional) path where the CPU profiler will store its data." optional:"yes"`
 	MemProfile string `short:"M" long:"mem-profile" description:"The (optional) path where the memory profiler will store its data." optional:"yes"`
-	Logger     string `short:"L" long:"logger" description:"The logger to use." optional:"yes" choice:"zap" choice:"console" choice:"hcl" choice:"file" choice:"warn" choice:"off"`
+	Logger     string `short:"L" long:"logger" description:"The logger to use." optional:"yes" default:"none" choice:"zap" choice:"console" choice:"hcl" choice:"file" choice:"log" choice:"none"`
 }
 
 type Closer struct {
@@ -24,6 +27,24 @@ func (c *Closer) Close() {
 		pprof.StopCPUProfile()
 		c.file.Close()
 	}
+}
+
+func (cmd *Base) GetLogger(wrapped interface{}) logging.Logger {
+	switch cmd.Logger {
+	case "none":
+		return &logging.NoOpLogger{}
+	case "console":
+		return logging.NewConsoleLogger(logging.StdOut)
+	case "hcl":
+		return logging.NewHCLLogger(wrapped.(hclog.Logger))
+	case "zap":
+		return logging.NewZapLogger()
+	case "file":
+		exe, _ := os.Executable()
+		log := fmt.Sprintf("%s-%d.log", strings.Replace(exe, ".exe", "", -1), os.Getpid())
+		return logging.NewFileLogger(log)
+	}
+	return &logging.NoOpLogger{}
 }
 
 func (cmd *Base) ProfileCPU(logger logging.Logger) *Closer {

@@ -12,6 +12,7 @@ require (
 	github.com/hashicorp/go-hclog v1.1.0
 	github.com/hashicorp/raft v1.3.3
 	github.com/hashicorp/raft-boltdb v0.0.0-20211202195631-7d34b9fb3f42
+	github.com/iancoleman/strcase v0.2.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/montanaflynn/stats v0.6.6
@@ -31,7 +32,6 @@ require (
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
@@ -39,7 +39,7 @@ require (
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220126215142-9970aeb2e350 // indirect
+	google.golang.org/genproto v0.0.0-20220201184016-50beb8ab5c44 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 

@@ -34,7 +34,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 	logger := logging.NewConsoleLogger(logging.StdOut)
 	defer cmd.ProfileCPU(logger).Close()
 
-	serviceConfig := `{"healthCheckConfig": {"serviceName": "Log"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
+	serviceConfig := `{"healthCheckConfig": {"serviceName": "quis.RaftLeader"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{
 		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
 		grpc_retry.WithMax(5),
