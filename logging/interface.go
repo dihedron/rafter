@@ -10,6 +10,7 @@ const (
 	LevelInfo
 	LevelWarn
 	LevelError
+	LevelOff
 )
 
 var (

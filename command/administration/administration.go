@@ -4,7 +4,6 @@ package administration
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -27,7 +26,7 @@ import (
 type Administration struct {
 	base.Base
 
-	Leader             bool           `short:"l" long:"leader" description:"Whether to dial the leader." optional:"yes"`
+	// Leader2            bool           `short:"l" long:"leader" description:"Whether to dial the leader." optional:"yes"`
 	Peers              []cluster.Peer `short:"p" long:"peer" description:"The address of a peer node in the cluster to join" required:"yes"`
 	HealthCheckService string         `short:"h" long:"health-check" description:"Which gRPC service to health check when searching for the leader." optional:"yes" default:"quis.RaftLeader"`
 }
@@ -70,30 +69,37 @@ func (cmd *Administration) Execute(args []string) error {
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
 		grpc.WithBlock())
 	if err != nil {
+		logger.Error("error connecting to gRPC server(s) %s: %v", address, err)
 		return err
 	}
 	defer connection.Close()
 
-	log.Printf("Invoking %s(%s)", m.Name(), prototext.Format(request.Interface()))
+	logger.Debug("invoking %s(%s)", m.Name(), prototext.Format(request.Interface()))
 	response := messageFromDescriptor(m.Output()).Interface()
 	if err := connection.Invoke(ctx, "/RaftAdmin/"+string(m.Name()), request.Interface(), response); err != nil {
+		logger.Error("error invoking %s(%s): %v", m.Name(), prototext.Format(request.Interface()), err)
 		return err
 	}
-	log.Printf("Response: %s", strings.TrimSpace(prototext.Format(response)))
+	logger.Debug("response: '%s'", strings.TrimSpace(prototext.Format(response)))
 
 	// this method returned a future; we call Await() to get the result,
 	// and then Forget() to free up the memory of the server
 	if f, ok := response.(*proto.Future); ok {
 		c := proto.NewRaftAdminClient(connection)
-		log.Printf("Invoking Await(%s)", strings.TrimRight(prototext.Format(f), "\n\r"))
+		logger.Debug("invoking Await(%s)", strings.TrimRight(prototext.Format(f), "\n\r"))
 		response, err := c.Await(ctx, f)
 		if err != nil {
+			logger.Error("error invoking Await(%s): %v", strings.TrimRight(prototext.Format(f), "\n\r"), err)
 			return err
 		}
-		log.Printf("Response: %s", prototext.Format(response))
+		logger.Info("response: '%s'", strings.TrimSpace(prototext.Format(response)))
+		fmt.Printf("%s(%s) --> %s\n", m.Name(), prototext.Format(request.Interface()), strings.TrimSpace(prototext.Format(response)))
 		if _, err := c.Forget(ctx, f); err != nil {
+			logger.Error("error invoking Forget(): %v", err)
 			return err
 		}
+	} else {
+		fmt.Printf("%s(%s) --> %s\n", m.Name(), prototext.Format(request.Interface()), strings.TrimSpace(prototext.Format(response)))
 	}
 	return nil
 }

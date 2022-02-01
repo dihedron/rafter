@@ -12,7 +12,7 @@ import (
 )
 
 type Base struct {
-	Debug      string `short:"D" long:"debug" description:"The debug level of the application." optional:"yes" choice:"off" choice:"debug" choice:"info" choice:"warn" choice:"error"`
+	Debug      string `short:"D" long:"debug" description:"The debug level of the application." optional:"yes" choice:"off" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error"`
 	CPUProfile string `short:"C" long:"cpu-profile" description:"The (optional) path where the CPU profiler will store its data." optional:"yes"`
 	MemProfile string `short:"M" long:"mem-profile" description:"The (optional) path where the memory profiler will store its data." optional:"yes"`
 	Logger     string `short:"L" long:"logger" description:"The logger to use." optional:"yes" default:"none" choice:"zap" choice:"console" choice:"hcl" choice:"file" choice:"log" choice:"none"`
@@ -30,6 +30,20 @@ func (c *Closer) Close() {
 }
 
 func (cmd *Base) GetLogger(wrapped interface{}) logging.Logger {
+	switch cmd.Debug {
+	case "trace":
+		logging.SetLevel(logging.LevelTrace)
+	case "debug":
+		logging.SetLevel(logging.LevelDebug)
+	case "info":
+		logging.SetLevel(logging.LevelInfo)
+	case "warn":
+		logging.SetLevel(logging.LevelWarn)
+	case "error":
+		logging.SetLevel(logging.LevelError)
+	case "off":
+		logging.SetLevel(logging.LevelOff)
+	}
 	switch cmd.Logger {
 	case "none":
 		return &logging.NoOpLogger{}
