@@ -11,7 +11,7 @@ import (
 	_ "github.com/dihedron/grpc-multi-resolver"
 	"github.com/dihedron/rafter/command/data/random"
 	proto "github.com/dihedron/rafter/distributed/proto"
-	"github.com/dihedron/rafter/logging"
+	"github.com/dihedron/rafter/logging/console"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/montanaflynn/stats"
 	"google.golang.org/grpc"
@@ -31,7 +31,7 @@ type Benchmark struct {
 
 func (cmd *Benchmark) Execute(args []string) error {
 
-	logger := logging.NewConsoleLogger(logging.StdOut)
+	logger := console.NewLogger(console.StdOut)
 	// defer cmd.ProfileCPU(logger).Close()
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "quis.RaftLeader"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`

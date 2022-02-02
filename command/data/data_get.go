@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/dihedron/grpc-multi-resolver"
 	proto "github.com/dihedron/rafter/distributed/proto"
-	"github.com/dihedron/rafter/logging"
+	"github.com/dihedron/rafter/logging/console"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/health"
@@ -22,7 +22,7 @@ type Get struct {
 
 func (cmd *Get) Execute(args []string) error {
 
-	logger := logging.NewConsoleLogger(logging.StdOut)
+	logger := console.NewLogger(console.StdOut)
 	defer cmd.ProfileCPU(logger).Close()
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "quis.RaftLeader"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`

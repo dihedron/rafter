@@ -14,6 +14,7 @@ import (
 	"github.com/dihedron/rafter/distributed"
 	proto "github.com/dihedron/rafter/distributed/proto"
 	"github.com/dihedron/rafter/logging"
+	"github.com/dihedron/rafter/logging/noop"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	"google.golang.org/grpc"
@@ -43,7 +44,7 @@ func New(id string, context *distributed.Context, options ...Option) (*Cluster, 
 	c := &Cluster{
 		id:      id,
 		peers:   []Peer{},
-		logger:  &logging.NoOpLogger{},
+		logger:  &noop.Logger{},
 		context: context,
 	}
 	for _, option := range options {

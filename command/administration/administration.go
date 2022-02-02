@@ -34,7 +34,7 @@ type Administration struct {
 
 func (cmd *Administration) Execute(args []string) error {
 
-	logger := cmd.GetLogger(nil)
+	logger := cmd.GetLogger()
 	ctx := context.Background()
 	methods := proto.File_raftadmin_proto.Services().ByName("RaftAdmin").Methods()
 

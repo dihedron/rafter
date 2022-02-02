@@ -10,7 +10,6 @@ import (
 	"github.com/dihedron/rafter/cluster"
 	"github.com/dihedron/rafter/command/base"
 	"github.com/dihedron/rafter/distributed"
-	"github.com/dihedron/rafter/logging"
 )
 
 type Run struct {
@@ -31,11 +30,9 @@ func (cmd *Run) Execute(args []string) error {
 	}
 	fmt.Printf("starting a node at '%s' (base directory '%s'), with peers %+v\n", cmd.Address, cmd.Directory, cmd.Peers)
 
-	logger := logging.NewConsoleLogger(logging.StdOut)
-	// logger := logging.NewConsoleLogger(logging.StdOut)
-	// logger := logging.NewLogLogger("rafter")
-
-	defer cmd.ProfileCPU(logger).Close()
+	//logger := console.NewLogger(console.StdOut)
+	logger := cmd.GetLogger()
+	//defer cmd.ProfileCPU(logger).Close()
 
 	appl := distributed.NewContext(logger)
 

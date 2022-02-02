@@ -1,4 +1,4 @@
-package logging
+package stream
 
 import (
 	"fmt"
@@ -6,24 +6,28 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dihedron/rafter/logging"
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 )
 
 const TimeFormat = "2006-01-02T15:04:05.999-0700"
 
-type StreamLogger struct {
+// Logger is a logger that write sits messages to a stream.
+type Logger struct {
 	stream *os.File
 }
 
-func NewStreamLogger(stream *os.File) *StreamLogger {
-	return &StreamLogger{
+// NewLogger returns an instance of a stream Logger.
+func NewLogger(stream *os.File) *Logger {
+	return &Logger{
 		stream: stream,
 	}
 }
 
-func (l *StreamLogger) Trace(msg string, args ...interface{}) {
-	if GetLevel() <= LevelTrace {
+// Trace logs a message at LevelTrace level.
+func (l *Logger) Trace(msg string, args ...interface{}) {
+	if logging.GetLevel() <= logging.LevelTrace {
 		if isatty.IsTerminal(l.stream.Fd()) {
 			l.write(color.HiWhiteString("TRC"), msg, args...)
 		} else {
@@ -32,8 +36,9 @@ func (l *StreamLogger) Trace(msg string, args ...interface{}) {
 	}
 }
 
-func (l *StreamLogger) Debug(msg string, args ...interface{}) {
-	if GetLevel() <= LevelDebug {
+// Debug logs a message at LevelDebug level.
+func (l *Logger) Debug(msg string, args ...interface{}) {
+	if logging.GetLevel() <= logging.LevelDebug {
 		if isatty.IsTerminal(l.stream.Fd()) {
 			l.write(color.HiBlueString("DBG"), msg, args...)
 		} else {
@@ -42,8 +47,9 @@ func (l *StreamLogger) Debug(msg string, args ...interface{}) {
 	}
 }
 
-func (l *StreamLogger) Info(msg string, args ...interface{}) {
-	if GetLevel() <= LevelInfo {
+// Info logs a message at LevelInfo level.
+func (l *Logger) Info(msg string, args ...interface{}) {
+	if logging.GetLevel() <= logging.LevelInfo {
 		if isatty.IsTerminal(l.stream.Fd()) {
 			l.write(color.HiGreenString("INF"), msg, args...)
 		} else {
@@ -52,8 +58,9 @@ func (l *StreamLogger) Info(msg string, args ...interface{}) {
 	}
 }
 
-func (l *StreamLogger) Warn(msg string, args ...interface{}) {
-	if GetLevel() <= LevelWarn {
+// Warn logs a message at LevelWarn level.
+func (l *Logger) Warn(msg string, args ...interface{}) {
+	if logging.GetLevel() <= logging.LevelWarn {
 		if isatty.IsTerminal(l.stream.Fd()) {
 			l.write(color.HiYellowString("WRN"), msg, args...)
 		} else {
@@ -62,8 +69,9 @@ func (l *StreamLogger) Warn(msg string, args ...interface{}) {
 	}
 }
 
-func (l *StreamLogger) Error(msg string, args ...interface{}) {
-	if GetLevel() <= LevelError {
+// Error logs a message at LevelError level.
+func (l *Logger) Error(msg string, args ...interface{}) {
+	if logging.GetLevel() <= logging.LevelError {
 		if isatty.IsTerminal(l.stream.Fd()) {
 			l.write(color.HiRedString("ERR"), msg, args...)
 		} else {
@@ -72,7 +80,7 @@ func (l *StreamLogger) Error(msg string, args ...interface{}) {
 	}
 }
 
-func (l *StreamLogger) write(level string, msg string, args ...interface{}) {
+func (l *Logger) write(level string, msg string, args ...interface{}) {
 	message := fmt.Sprintf(strings.TrimSpace(msg), args...)
 	fmt.Fprintf(l.stream, "%s [%s] %s\n", time.Now().Format(TimeFormat), level, message)
 }

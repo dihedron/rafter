@@ -1,16 +1,9 @@
 # Use goreman to run `go get github.com/mattn/goreman`
 setup: mkdir -p store/
 
-# start by pootstrapping (at least) one node
-# node1: ./rafter run --address=localhost:7001 --directory=tests/raft/store/node1 --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node1 --bootstrap 
-# node2: ./rafter run --address=localhost:7002 --directory=tests/raft/store/node2 --peer=@tests/raft/node1.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node2
-# node3: ./rafter run --address=localhost:7003 --directory=tests/raft/store/node3 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node3
-# node4: ./rafter run --address=localhost:7004 --directory=tests/raft/store/node4 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node5.json node4
-# node5: ./rafter run --address=localhost:7005 --directory=tests/raft/store/node5 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json node5
-
 # once the cluster has been bootstrapped, no need to do it again
-node1: ./rafter run --address=localhost:7001 --directory=tests/raft/store/node1 --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node1 --cpu-profile=node1-cpuprof.out
-node2: ./rafter run --address=localhost:7002 --directory=tests/raft/store/node2 --peer=@tests/raft/node1.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node2 --cpu-profile=node2-cpuprof.out
-node3: ./rafter run --address=localhost:7003 --directory=tests/raft/store/node3 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node3 --cpu-profile=node3-cpuprof.out
-node4: ./rafter run --address=localhost:7004 --directory=tests/raft/store/node4 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node5.json node4 --cpu-profile=node4-cpuprof.out
-node5: ./rafter run --address=localhost:7005 --directory=tests/raft/store/node5 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json node5 --cpu-profile=node5-cpuprof.out
+node1: ./rafter run --address=localhost:7001 --directory=tests/raft/store/node1 --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node1 --logger=console --debug=debug
+node2: ./rafter run --address=localhost:7002 --directory=tests/raft/store/node2 --peer=@tests/raft/node1.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node2 --logger=console --debug=debug
+node3: ./rafter run --address=localhost:7003 --directory=tests/raft/store/node3 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node4.json --peer=@tests/raft/node5.json node3 --logger=console --debug=debug
+node4: ./rafter run --address=localhost:7004 --directory=tests/raft/store/node4 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node5.json node4 --logger=console --debug=debug
+node5: ./rafter run --address=localhost:7005 --directory=tests/raft/store/node5 --peer=@tests/raft/node1.json --peer=@tests/raft/node2.json --peer=@tests/raft/node3.json --peer=@tests/raft/node4.json node5 --logger=console --debug=debug

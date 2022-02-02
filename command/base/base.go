@@ -8,14 +8,17 @@ import (
 	"strings"
 
 	"github.com/dihedron/rafter/logging"
-	"github.com/hashicorp/go-hclog"
+	"github.com/dihedron/rafter/logging/console"
+	"github.com/dihedron/rafter/logging/file"
+	"github.com/dihedron/rafter/logging/noop"
+	"github.com/dihedron/rafter/logging/uber"
 )
 
 type Base struct {
-	Debug      string `short:"D" long:"debug" description:"The debug level of the application." optional:"yes" choice:"off" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error"`
+	Debug      string `short:"D" long:"debug" description:"The debug level of the application." optional:"yes" choice:"off" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" default:"debug"`
 	CPUProfile string `short:"C" long:"cpu-profile" description:"The (optional) path where the CPU profiler will store its data." optional:"yes"`
 	MemProfile string `short:"M" long:"mem-profile" description:"The (optional) path where the memory profiler will store its data." optional:"yes"`
-	Logger     string `short:"L" long:"logger" description:"The logger to use." optional:"yes" default:"none" choice:"zap" choice:"console" choice:"hcl" choice:"file" choice:"log" choice:"none"`
+	Logger     string `short:"L" long:"logger" description:"The logger to use." optional:"yes" default:"none" choice:"zap" choice:"console" choice:"file" choice:"log" choice:"none"`
 }
 
 type Closer struct {
@@ -29,7 +32,7 @@ func (c *Closer) Close() {
 	}
 }
 
-func (cmd *Base) GetLogger(wrapped interface{}) logging.Logger {
+func (cmd *Base) GetLogger() logging.Logger {
 	switch cmd.Debug {
 	case "trace":
 		logging.SetLevel(logging.LevelTrace)
@@ -46,19 +49,18 @@ func (cmd *Base) GetLogger(wrapped interface{}) logging.Logger {
 	}
 	switch cmd.Logger {
 	case "none":
-		return &logging.NoOpLogger{}
+		return &noop.Logger{}
 	case "console":
-		return logging.NewConsoleLogger(logging.StdOut)
-	case "hcl":
-		return logging.NewHCLLogger(wrapped.(hclog.Logger))
+		return console.NewLogger(console.StdOut)
 	case "zap":
-		return logging.NewZapLogger()
+		logger, _ := uber.NewLogger()
+		return logger
 	case "file":
 		exe, _ := os.Executable()
 		log := fmt.Sprintf("%s-%d.log", strings.Replace(exe, ".exe", "", -1), os.Getpid())
-		return logging.NewFileLogger(log)
+		return file.NewLogger(log)
 	}
-	return &logging.NoOpLogger{}
+	return &noop.Logger{}
 }
 
 func (cmd *Base) ProfileCPU(logger logging.Logger) *Closer {
