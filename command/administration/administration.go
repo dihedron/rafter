@@ -9,7 +9,6 @@ import (
 	"time"
 
 	proto "github.com/Jille/raftadmin/proto"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/iancoleman/strcase"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -18,16 +17,18 @@ import (
 	_ "github.com/dihedron/grpc-multi-resolver"
 	"github.com/dihedron/rafter/cluster"
 	"github.com/dihedron/rafter/command/base"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 
 	// Register health checker with gRPC.
+	"google.golang.org/grpc/credentials/insecure"
 	_ "google.golang.org/grpc/health"
 )
 
 type Administration struct {
 	base.Base
 
-	// Leader2            bool           `short:"l" long:"leader" description:"Whether to dial the leader." optional:"yes"`
-	Peers              []cluster.Peer `short:"p" long:"peer" description:"The address of a peer node in the cluster to join" required:"yes"`
+	Leader             bool           `short:"l" long:"leader" description:"Whether to dial the leader." optional:"yes"`
+	Peers              []cluster.Peer `short:"t" long:"target" description:"The address of the node in the cluster to send the request to." required:"yes"`
 	HealthCheckService string         `short:"h" long:"health-check" description:"Which gRPC service to health check when searching for the leader." optional:"yes" default:"quis.RaftLeader"`
 }
 
@@ -39,7 +40,6 @@ func (cmd *Administration) Execute(args []string) error {
 
 	if len(args) < 1 {
 		logger.Error("invalid command line format")
-		// if flag.NArg() < 2 {
 		var commands []string
 		for i := 0; methods.Len() > i; i++ {
 			commands = append(commands, strcase.ToKebab(string(methods.Get(i).Name())))
@@ -52,22 +52,49 @@ func (cmd *Administration) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	serviceConfig := fmt.Sprintf(`{"healthCheckConfig": {"serviceName": "%s"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`, cmd.HealthCheckService)
+
+	var serviceConfig grpc.DialOption = grpc.EmptyDialOption{}
+	if cmd.Leader {
+		c := fmt.Sprintf(`{"healthCheckConfig": {"serviceName": "%s"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`, cmd.HealthCheckService)
+		serviceConfig = grpc.WithDefaultServiceConfig(c)
+		logger.Debug("using service configuration: '%s'", c)
+	}
+	retryOpts := []grpc_retry.CallOption{
+		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
+		grpc_retry.WithMax(5),
+	}
 	peers := []string{}
 	for _, peer := range cmd.Peers {
 		peers = append(peers, peer.Address.String())
 	}
 	address := fmt.Sprintf("multi:///%s", strings.Join(peers, ","))
 	logger.Info("connecting to %s", address)
-	retryOpts := []grpc_retry.CallOption{
-		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
-		grpc_retry.WithMax(5),
-	}
-	connection, err := grpc.Dial(address,
-		grpc.WithDefaultServiceConfig(serviceConfig), grpc.WithInsecure(),
+	connection, err := grpc.Dial(
+		address,
+		grpc.WithTransportCredentials(
+			insecure.NewCredentials(),
+		),
 		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
+		grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
-		grpc.WithBlock())
+		serviceConfig,
+	)
+
+	// peers := []string{}
+	// for _, peer := range cmd.Peers {
+	// 	peers = append(peers, peer.Address.String())
+	// }
+	// address := fmt.Sprintf("multi:///%s", strings.Join(peers, ","))
+	// logger.Info("connecting to %s", address)
+	// retryOpts := []grpc_retry.CallOption{
+	// 	grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
+	// 	grpc_retry.WithMax(5),
+	// }
+	// connection, err := grpc.Dial(address,
+	// 	grpc.WithDefaultServiceConfig(serviceConfig), grpc.WithInsecure(),
+	// 	grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
+	// 	grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
+	// 	grpc.WithBlock())
 	if err != nil {
 		logger.Error("error connecting to gRPC server(s) %s: %v", address, err)
 		return err

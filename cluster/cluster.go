@@ -77,7 +77,7 @@ func New(id string, context *distributed.Context, options ...Option) (*Cluster, 
 	config.SnapshotThreshold = 64
 	c.raft, err = raft.NewRaft(config, c.context, boltDB, boltDB, snapshots, c.transport.Transport())
 	if err != nil {
-		c.logger.Error("error creating new raft clutser: %v", err)
+		c.logger.Error("error creating new raft cluster: %v", err)
 		return nil, fmt.Errorf("error creating new Raft cluster: %w", err)
 	}
 
@@ -124,7 +124,7 @@ func (c *Cluster) StartRPCServer() error {
 	c.server = grpc.NewServer()
 	proto.RegisterContextServer(c.server, distributed.NewRPCInterface(c.context, c.raft, c.logger))
 	c.transport.Register(c.server)
-	leaderhealth.Setup(c.raft, c.server, []string{"Log"})
+	leaderhealth.Setup(c.raft, c.server, []string{"quis.RaftLeader"})
 	raftadmin.Register(c.server, c.raft)
 	reflection.Register(c.server)
 

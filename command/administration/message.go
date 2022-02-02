@@ -1,7 +1,6 @@
 package administration
 
 import (
-	"flag"
 	"fmt"
 	"strconv"
 	"strings"
@@ -52,7 +51,7 @@ func GetMessageByName(command string, args []string) (protoreflect.Message, prot
 	// convert given strings to the right type and set them on the request proto
 	req := messageFromDescriptor(reqDesc)
 	for i, f := range fields {
-		s := flag.Arg(2 + i)
+		s := args[i]
 		var v protoreflect.Value
 		switch f.Kind() {
 		case protoreflect.StringKind:
