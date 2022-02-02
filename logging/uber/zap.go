@@ -46,8 +46,8 @@ func NewLogger() (*Logger, error) {
 		restore = zap.ReplaceGlobals(logger)
 		zap.S().Info("application starting with custom log configuration")
 		return &Logger{
-			//logger: logger.WithOptions(zap.AddCallerSkip(1)),
-			logger: logger,
+			logger: logger.WithOptions(zap.AddCallerSkip(1)),
+			// logger: logger,
 		}, nil
 	}
 	// configuration does not exist, use default
@@ -65,43 +65,43 @@ func NewLogger() (*Logger, error) {
 	zap.S().Info("application starting with default log configuration")
 
 	return &Logger{
-		//logger: logger.WithOptions(zap.AddCallerSkip(1)),
-		logger: logger,
+		logger: logger.WithOptions(zap.AddCallerSkip(1)),
+		//logger: logger,
 	}, nil
 }
 
 // Trace logs a message at LevelTrace level.
 func (l *Logger) Trace(format string, args ...interface{}) {
 	if logging.GetLevel() <= logging.LevelTrace {
-		zap.S().Debugf(format, args...)
+		l.logger.Sugar().Debugf(format, args...)
 	}
 }
 
 // Debug logs a message at LevelDebug level.
 func (l *Logger) Debug(format string, args ...interface{}) {
 	if logging.GetLevel() <= logging.LevelDebug {
-		zap.S().Debugf(format, args)
+		l.logger.Sugar().Debugf(format, args...)
 	}
 }
 
 // Info logs a message at LevelInfo level.
 func (l *Logger) Info(format string, args ...interface{}) {
 	if logging.GetLevel() <= logging.LevelInfo {
-		zap.S().Infof(format, args)
+		l.logger.Sugar().Infof(format, args...)
 	}
 }
 
 // Warn logs a message at LevelWarn level.
 func (l *Logger) Warn(format string, args ...interface{}) {
 	if logging.GetLevel() <= logging.LevelWarn {
-		zap.S().Warnf(format, args)
+		l.logger.Sugar().Warnf(format, args...)
 	}
 }
 
 // Error logs a message at LevelError level.
 func (l *Logger) Error(format string, args ...interface{}) {
 	if logging.GetLevel() <= logging.LevelError {
-		zap.S().Errorf(format, args)
+		l.logger.Sugar().Errorf(format, args...)
 	}
 }
 
