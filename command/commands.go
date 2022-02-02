@@ -13,7 +13,4 @@ type Commands struct {
 	Data data.Data `command:"data" alias:"d" description:"Manage data in the cluster."`
 
 	Administration administration.Administration `command:"administration" alias:"admin" alias:"a" description:"Run command against the cluster."`
-	// Join Join `command:"join" alias:"j" description:"Join a node to the cluster."`
-
-	// Leave Leave `command:"leave" alias:"l" description:"Leave a node to the cluster."`
 }

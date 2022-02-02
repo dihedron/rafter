@@ -32,7 +32,7 @@ type Benchmark struct {
 func (cmd *Benchmark) Execute(args []string) error {
 
 	logger := logging.NewConsoleLogger(logging.StdOut)
-	defer cmd.ProfileCPU(logger).Close()
+	// defer cmd.ProfileCPU(logger).Close()
 
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "quis.RaftLeader"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{
@@ -85,7 +85,7 @@ func (cmd *Benchmark) Execute(args []string) error {
 			data := stats.LoadRawData(ts)
 			mean, _ := data.Mean()
 			stddev, _ := data.StandardDeviation()
-			logger.Info("[%d] Stats: mean %s, std dev: %s", goroutine, time.Duration(mean), time.Duration(stddev))
+			logger.Info("[%d] Stats: count: %d, mean %s, std dev: %s", goroutine, len(ts), time.Duration(mean), time.Duration(stddev))
 		}(i)
 	}
 	wg.Wait()
